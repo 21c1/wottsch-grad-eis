@@ -98,7 +98,10 @@
   h1{color:#fff;font-size:23px;font-weight:800;letter-spacing:.2px;margin-bottom:2px}
   h1 .fz{color:var(--mango)}
   #gruss{font-size:13px;color:#d9f6ff;margin:0 0 10px}
-  nav{background:rgba(255,255,255,.14);border-radius:14px;padding:4px;display:inline-flex}
+  nav{background:rgba(255,255,255,.14);border-radius:14px;padding:4px;display:inline-flex;flex-wrap:nowrap;max-width:100%;overflow-x:auto;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav button{white-space:nowrap;flex:none}
+  @media (max-width:420px){nav button{padding:7px 11px;font-size:13.5px}}
   nav button{background:transparent;border:0;color:#ecfbff;font-weight:700;border-radius:10px}
   nav button:hover{background:rgba(255,255,255,.16)}
   nav button.aktiv{background:#fff;color:var(--petrol);box-shadow:inset 0 -3px 0 var(--mango),0 2px 8px rgba(0,0,0,.15)}
@@ -189,8 +192,28 @@
   .modal-name{position:relative;font-size:24px;font-weight:800;color:var(--petrol);margin:4px 0}
   .modal-text{position:relative;color:var(--text);margin-bottom:18px}
   .modal .btn{position:relative}
+  /* Versionshinweis oben rechts + Release Notes */
+  .version{position:absolute!important;top:14px;right:14px;z-index:2;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.16);
+           color:#fff;font:700 12px/1 inherit;font-family:inherit;padding:6px 10px;border-radius:999px;cursor:pointer;backdrop-filter:blur(4px)}
+  .version:hover{background:rgba(255,255,255,.28)}
+  .neu-punkt{display:none;position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:var(--mango);
+             box-shadow:0 0 0 2px var(--petrol);animation:flackern 1.6s ease-in-out infinite}
+  .version.neu .neu-punkt{display:block}
+  header h1,#gruss{padding-right:64px}
+  .modal.notes{text-align:left;padding:22px 20px 18px;width:min(420px,92vw);max-height:82vh;display:flex;flex-direction:column}
+  .notes-kopf{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+  .notes-kopf .modal-name{margin:2px 0 0;font-size:22px}
+  .notes-liste{overflow-y:auto;padding-right:4px}
+  .rel{border-left:4px solid var(--line);padding:2px 0 4px 12px;margin-bottom:16px}
+  .rel.aktuell{border-color:var(--mango)}
+  .rel-kopf{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .rel-nr{font-weight:800;color:var(--petrol);font-size:16px}
+  .rel-titel{font-weight:700} .rel-datum{font-size:12px;color:var(--muted)}
+  .rel-tag{font-size:11px;font-weight:800;background:var(--mango);color:#5a3a00;border-radius:999px;padding:1px 8px}
+  .rel ul{margin:6px 0 0;padding-left:18px;font-size:14px} .rel li{margin:3px 0}
+  @media (prefers-reduced-motion:reduce){.neu-punkt{animation:none}}
   @media (prefers-reduced-motion:reduce){header,.serie.an,.modal,.modal-emoji,.modal-glanz{animation:none}.konfetti{display:none}}
-  /* Stammdaten: Lebensmittel und Aktivitäten immer nebeneinander (auch auf dem Handy) */
+  /* Meine Listen (intern: stammdaten): Lebensmittel und Aktivitäten immer nebeneinander (auch auf dem Handy) */
   .spalten{grid-template-columns:1fr 1fr}
   .spalten .karte{min-width:0}
   .kacheln{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
@@ -213,12 +236,12 @@
 <header>
   <h1>Wottsch grad eis<span class="fz">?</span></h1>
   <p id="gruss"></p>
+  <button class="version" id="versionBtn" title="Was ist neu?">v<span id="versionNr"></span><span class="neu-punkt" id="neuPunkt"></span></button>
   <nav>
     <button data-seite="tagebuch" class="aktiv">Tagebuch</button>
-    <button data-seite="bewegung">Bewegung</button>
     <button data-seite="ziele">Ziele</button>
     <button data-seite="auswertung">Auswertung</button>
-    <button data-seite="stammdaten">Stammdaten</button>
+    <button data-seite="stammdaten">Meine Listen</button>
   </nav>
 </header>
 
@@ -260,15 +283,6 @@
       <div id="tagesBalken" style="margin-top:12px"></div>
     </div>
     <div class="karte">
-      <h2>Wochenübersicht</h2>
-      <table id="wochenTabelle"></table>
-    </div>
-  </section>
-
-
-  <!-- ===== 3b. SEITE BEWEGUNG ===== -->
-  <section id="bewegung" class="versteckt">
-    <div class="karte">
       <h2 id="bewTagTitel"></h2>
       <div class="zeile">
         <input id="bewAkt" class="grow" list="aktVorschlag" placeholder="Aktivität tippen oder auswählen …" autocomplete="off">
@@ -296,20 +310,15 @@
           <button class="btn" id="impOk">Importieren</button><button class="klein" id="impAbbruch">Abbrechen</button>
         </div>
       </div>
-      <p class="muted">Das Datum wählst du im Kalender unter «Tagebuch». Schritte von Hand eintragen oder als CSV aus der Uhr-/Handy-App importieren.</p>
+      <p class="muted">Gilt für den im Kalender gewählten Tag. Schritte von Hand eintragen oder als CSV aus der Uhr-/Handy-App importieren.</p>
       <ul class="liste" id="bewListe"></ul>
     </div>
     <div class="karte">
-      <h2>Bewegung diese Woche</h2>
-      <table id="bewWoche"></table>
-    </div>
-    <div class="karte">
-      <h2>Vorschläge für dich</h2>
-      <p class="muted" id="bewStand"></p>
-      <ul class="liste" id="vorschlagListe"></ul>
-      <button class="klein" id="neueVorschlaege" style="margin-top:8px">Andere Vorschläge</button>
+      <h2>Wochenübersicht</h2>
+      <table id="wochenTabelle"></table>
     </div>
   </section>
+
 
   <!-- ===== 4. SEITE ZIELE ===== -->
   <section id="ziele" class="versteckt">
@@ -364,19 +373,29 @@
       </div>
     </div>
     <div class="karte">
-      <h2>Abzeichen <span class="muted" id="badgeZahl"></span></h2>
-      <div class="badges" id="badges"></div>
+      <h2>Bewegung im Zeitraum</h2>
+      <div class="auswertung">
+        <div class="pie" id="bewPie"></div>
+        <div class="legende" id="bewLegende"></div>
+      </div>
+    </div>
+    <div class="karte">
+      <h2>Bewegung diese Woche</h2>
+      <table id="bewWoche"></table>
     </div>
     <div class="karte">
       <h2>Tipps zu deinen Zielen</h2>
       <div id="tipps"></div>
     </div>
     <div class="karte">
-      <h2>Bewegung im Zeitraum</h2>
-      <div class="auswertung">
-        <div class="pie" id="bewPie"></div>
-        <div class="legende" id="bewLegende"></div>
-      </div>
+      <h2>Vorschläge für dich</h2>
+      <p class="muted" id="bewStand"></p>
+      <ul class="liste" id="vorschlagListe"></ul>
+      <button class="klein" id="neueVorschlaege" style="margin-top:8px">Andere Vorschläge</button>
+    </div>
+    <div class="karte">
+      <h2>Abzeichen <span class="muted" id="badgeZahl"></span></h2>
+      <div class="badges" id="badges"></div>
     </div>
     <div class="karte">
       <h2>Datensicherung</h2>
@@ -435,6 +454,13 @@
     <p class="muted">Tipp: Auf eine Kachel tippen, um sie zu bearbeiten.</p>
   </section>
 </main>
+<div class="modal-bg versteckt" id="notesModal">
+  <div class="modal notes">
+    <div class="notes-kopf"><div><div class="modal-klein">Release Notes</div><div class="modal-name">Was ist neu?</div></div>
+      <button class="klein" onclick="schliesseNotes()">✕</button></div>
+    <div class="notes-liste" id="notesListe"></div>
+  </div>
+</div>
 <div class="modal-bg versteckt" id="modal">
   <div class="modal">
     <div class="modal-glanz"></div>
@@ -768,7 +794,7 @@ function bewBalken(s, max) {
     <div class="mittelint" style="width:${w('mittel')}"></div><div class="intensiv" style="width:${w('intensiv')}"></div></div>`;
 }
 function zeichneBewegung() {
-  document.getElementById('bewTagTitel').textContent = 'Bewegung am ' + schoen(gewaehlt);
+  document.getElementById('bewTagTitel').textContent = 'Bewegung & Schritte am ' + schoen(gewaehlt);
   document.getElementById('schritte').value = daten.steps[gewaehlt] || '';
   document.getElementById('schritteInfo').textContent = daten.steps[gewaehlt]
     ? `≈ ${(daten.steps[gewaehlt] * 0.75 / 1000).toFixed(1)} km` : '';
@@ -1137,6 +1163,62 @@ function zeichneRinge() {
   sEl.classList.toggle('an', n >= 2);
 }
 
+/* ===== Version und Release Notes (neueste zuerst) ===== */
+const VERSIONEN = [
+  { nr: '1.7', datum: '2026-11-24', titel: 'Alles an einem Ort', punkte: [
+    'Tagebuch: alle Eingaben zusammen – Essen, Bewegung und Schritte (inkl. CSV-Import)',
+    'Auswertung: neu mit «Bewegung diese Woche» und «Vorschläge für dich»',
+    'Reiter «Bewegung» entfällt – vier Reiter statt fünf'] },
+  { nr: '1.6', datum: '2026-11-24', titel: 'Meine Listen & Release Notes', punkte: [
+    'Reiter «Stammdaten» heisst jetzt «Meine Listen»',
+    'Versionshinweis oben rechts – ein Punkt zeigt, wenn es Neues gibt',
+    'Diese Release Notes'] },
+  { nr: '1.5', datum: '2026-11-24', titel: '20 Abzeichen & Qualitätscheck', punkte: [
+    '20 Abzeichen in vier Gruppen (Ernährung, Serien, Bewegung & Schritte, Gesamt)',
+    'Mehrere neue Abzeichen erscheinen nacheinander',
+    'Schneller bei vielen Daten (getestet mit einem Jahr Einträgen)',
+    'Behoben: Absturz beim allerersten Start, US-Datumsformat beim Schritt-Import, Ziel mit Wert 0',
+    'Alte Sicherungen werden beim Import ergänzt; App springt nach Mitternacht auf den neuen Tag',
+    'Dateiname «wottsch-grad-eis.html», Sicherung «wottsch-grad-eis-sicherung-…json»'] },
+  { nr: '1.4', datum: '2026-11-24', titel: 'Wottsch grad eis?', punkte: [
+    'Neuer Name und Design in Petrol mit Mint, Himmelblau, Mango und Koralle',
+    'Tagesringe für Essen, Bewegung und Schritte mit Punktzahl',
+    '🔥-Serie: Tage in Folge mit mind. 50 % gesund',
+    'Erste Abzeichen mit Popup, Konfetti wenn ein Ziel erreicht wird'] },
+  { nr: '1.3', datum: '2026-11-24', titel: 'Kacheln & Sicherheit', punkte: [
+    'Neue Reiter-Reihenfolge; Lebensmittel und Aktivitäten als Kacheln nebeneinander',
+    'Kacheln suchen, filtern, bearbeiten und löschen',
+    'Daten werden dauerhaft gespeichert; Anzeige der letzten Sicherung'] },
+  { nr: '1.2', datum: '2026-11-24', titel: 'Tipps & Schritte', punkte: [
+    'Konkrete Tipps aus deinen Einträgen, wenn ein Ziel nicht erreicht ist',
+    'Schritte pro Tag, Schritte-Ziele und CSV-Import (z. B. Samsung Health)'] },
+  { nr: '1.1', datum: '2026-11-24', titel: 'Bewegung', punkte: [
+    '100 gängige Lebensmittel vorbereitet',
+    'Neuer Bereich Bewegung mit 39 Aktivitäten und Vorschlägen',
+    'Eingabe mit Auswahlliste und Autovervollständigung'] },
+  { nr: '1.0', datum: '2026-11-24', titel: 'Erste Version', punkte: [
+    'Lebensmittel mit Ampel (gesund, mittel, ungesund) und vegan',
+    'Tagebuch mit Kalender, Tages- und Wochenübersicht',
+    'Ziele mit Bewertung erreicht / teilweise / nicht erreicht',
+    'Auswertung für Tag, Woche und Monat mit Kreisdiagramm; Datensicherung'] }
+];
+const APP_VERSION = VERSIONEN[0].nr;
+function zeigeVersion() {
+  document.getElementById('versionNr').textContent = APP_VERSION;
+  document.getElementById('versionBtn').classList.toggle('neu', daten.gesehenVersion !== APP_VERSION);
+}
+function oeffneNotes() {
+  document.getElementById('notesListe').innerHTML = VERSIONEN.map((v, i) => `
+    <div class="rel ${i === 0 ? 'aktuell' : ''}">
+      <div class="rel-kopf"><span class="rel-nr">v${v.nr}</span><span class="rel-titel">${v.titel}</span>
+        ${i === 0 ? '<span class="rel-tag">aktuell</span>' : ''}<span class="rel-datum">${schoen(v.datum)}</span></div>
+      <ul>${v.punkte.map(p => `<li>${p}</li>`).join('')}</ul>
+    </div>`).join('');
+  document.getElementById('notesModal').classList.remove('versteckt');
+  daten.gesehenVersion = APP_VERSION; localStorage.setItem(SPEICHER, JSON.stringify(daten)); zeigeVersion();
+}
+function schliesseNotes() { document.getElementById('notesModal').classList.add('versteckt'); }
+
 /* ===== Abzeichen ===== */
 const ABZEICHEN = [
   // Ernährung
@@ -1191,7 +1273,7 @@ function zeigeAbzeichen(a) {
   feiern('');
 }
 
-function alles() { zeigeSicherung(); zeigeGruss(); zeichneRinge(); pruefeAbzeichen(); pruefeZiele(); zeichneKalender(); zeichneTag(); zeichneWoche(); zeichneFoods(); zeichneBewegung(); zeichneVorschlaege(); zeichneZiele(); zeichneAuswertung(); zeichneBewAuswertung(); zeichneTipps(); }
+function alles() { zeigeVersion(); zeigeSicherung(); zeigeGruss(); zeichneRinge(); pruefeAbzeichen(); pruefeZiele(); zeichneKalender(); zeichneTag(); zeichneWoche(); zeichneFoods(); zeichneBewegung(); zeichneVorschlaege(); zeichneZiele(); zeichneAuswertung(); zeichneBewAuswertung(); zeichneTipps(); }
 
 /* ================================================================
    E) AKTIONEN (Knöpfe)
@@ -1400,7 +1482,9 @@ document.getElementById('importFile').onchange = ev => {
 };
 
 document.getElementById('modal').onclick = e => { if (e.target.id === 'modal') schliesseModal(); };
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('modal').classList.contains('versteckt')) schliesseModal(); });
+document.getElementById('versionBtn').onclick = oeffneNotes;
+document.getElementById('notesModal').onclick = e => { if (e.target.id === 'notesModal') schliesseNotes(); };
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!document.getElementById('modal').classList.contains('versteckt')) schliesseModal(); else schliesseNotes(); });
 
 /* Neuer Tag, während die App offen war (z. B. über Nacht im Hintergrund) → auf heute springen */
 let heuteBeimStart = iso(new Date());
