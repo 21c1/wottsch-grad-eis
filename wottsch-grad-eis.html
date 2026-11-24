@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0e6b78">
+<title>Wottsch grad eis?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ===== 1. FARBEN UND GRUNDLAYOUT ===== */
+  :root{
+    --gesund:#2e9d4f; --mittel:#f08c00; --ungesund:#d6336c; --vegan:#5c7cfa; --bewegung:#1c7ed6;
+    --bg:#f6f7f9; --card:#fff; --text:#1f2328; --muted:#6b7280; --line:#e5e7eb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+  header{background:#fff;border-bottom:1px solid var(--line);padding:12px 16px;position:sticky;top:0;z-index:5}
+  h1{font-size:18px;margin:0 0 8px}
+  nav{display:flex;gap:6px;flex-wrap:wrap}
+  nav button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;cursor:pointer;font-size:14px}
+  nav button.aktiv{background:var(--text);color:#fff;border-color:var(--text)}
+  main{max-width:760px;margin:0 auto;padding:16px}
+  .karte{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  h2{font-size:16px;margin:0 0 12px}
+  input,select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  button.btn{font:inherit;padding:7px 14px;border:0;border-radius:8px;background:var(--text);color:#fff;cursor:pointer}
+  button.klein{font:inherit;font-size:13px;padding:3px 9px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer}
+  .zeile{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .liste{list-style:none;margin:0;padding:0}
+  .liste li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .liste li:last-child{border-bottom:0}
+  .punkt{width:12px;height:12px;border-radius:50%;flex:none}
+  .bew{background:var(--bewegung)}
+  .leicht{background:#bfe7f8} .mittelint{background:#5ab8e6} .intensiv{background:#0f5e6b}
+  .gesund{background:var(--gesund)} .mittel{background:var(--mittel)} .ungesund{background:var(--ungesund)}
+  .vegan-tag{font-size:12px;color:var(--vegan);border:1px solid var(--vegan);border-radius:999px;padding:0 7px}
+  .grow{flex:1}
+  .muted{color:var(--muted);font-size:14px}
+  /* Kalender */
+  .kal-kopf{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .kal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .kal div{text-align:center;font-size:13px}
+  .kal .wt{color:var(--muted);font-size:12px}
+  .tag{border:1px solid var(--line);border-radius:8px;padding:6px 0 4px;cursor:pointer;background:#fff;min-height:44px}
+  .tag.heute{border-color:var(--text)}
+  .tag.gewaehlt{background:var(--text);color:#fff}
+  .tag .dots{display:flex;justify-content:center;gap:2px;margin-top:3px;height:6px}
+  .tag .dots span{width:6px;height:6px;border-radius:50%}
+  /* Auswertung */
+  .pie{width:170px;height:170px;border-radius:50%;flex:none}
+  .auswertung{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+  .legende div{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .balken{display:flex;height:14px;border-radius:4px;overflow:hidden;background:var(--line);flex:1}
+  .status{font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px;white-space:nowrap}
+  .st-ok{background:#d3f9d8;color:#1b5e20} .st-teil{background:#fff3bf;color:#8a5a00}
+  .st-nein{background:#ffe3e3;color:#a61e4d} .st-leer{background:var(--line);color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td,th{padding:6px 4px;text-align:left;border-bottom:1px solid var(--line)}
+  .versteckt{display:none}
+  main:has(#stammdaten:not(.versteckt)){max-width:1100px}
+  .spalten{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;align-items:start}
+  .spalten .karte{margin-bottom:0}
+  .kacheln{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;max-height:560px;overflow-y:auto;padding:2px}
+  .kachel{position:relative;border-radius:10px;padding:10px 8px 8px;min-height:64px;cursor:pointer;border:1px solid transparent;
+          display:flex;flex-direction:column;justify-content:space-between;font-size:14px;line-height:1.25}
+  .kachel:hover{border-color:var(--text)}
+  .kachel .nm{font-weight:600;padding-right:14px;hyphens:auto;-webkit-hyphens:auto;overflow-wrap:break-word}
+  .kachel .info{font-size:11px;opacity:.85;margin-top:6px;display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .kachel .x{position:absolute;top:3px;right:5px;border:0;background:none;cursor:pointer;font-size:13px;opacity:.5;padding:2px}
+  .kachel .x:hover{opacity:1}
+  .k-gesund{background:#e6f4ea;color:#1b5e20} .k-mittel{background:#fff1db;color:#7a4a00} .k-ungesund{background:#fde4ec;color:#8a1c44}
+  .k-leicht{background:#e7f5ff;color:#0f5e6b} .k-mittelint{background:#c5e4fb;color:#0b4a7d} .k-intensiv{background:#0f5e6b;color:#fff}
+  .kachel .vg{background:#fff;color:var(--vegan);border-radius:999px;padding:0 6px;font-weight:600}
+  .tipp{border-left:4px solid var(--line);padding:4px 0 4px 12px;margin-bottom:14px}
+  .tipp.st-teil-rand{border-color:#f0b400} .tipp.st-nein-rand{border-color:var(--ungesund)}
+  .tipp ul{margin:6px 0 0;padding-left:18px} .tipp li{margin:3px 0;font-size:14px}
+
+  /* ===== 7. THEMA «Petrol spritzig» – hier Farben anpassen ===== */
+  :root{
+    --petrol:#0e6b78; --petrol-dunkel:#094650; --tuerkis:#13a3a8; --himmel:#4cc9f0; --hellblau:#bdeefc;
+    --koralle:#ff6b5b; --mango:#ffb020; --mint:#2ec486; --beere:#ff4f7b; --lila:#9b5de5;
+    --gesund:#2ec486; --mittel:#ffb020; --ungesund:#ff4f7b; --vegan:#9b5de5; --bewegung:#4cc9f0; --blau:#4cc9f0;
+    --text:#0f3940; --muted:#5f8a91; --line:#d7edf0; --flaeche:#ffffff;
+  }
+  body{font-family:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);
+       background:radial-gradient(700px 420px at 105% 0%,rgba(76,201,240,.22),transparent 65%),
+                  radial-gradient(600px 420px at -10% 40%,rgba(255,176,32,.16),transparent 65%),
+                  radial-gradient(700px 500px at 50% 115%,rgba(46,196,134,.18),transparent 65%),#f5fbfc fixed}
+  header{position:sticky;overflow:hidden;border:0;color:#fff;
+         background:linear-gradient(120deg,var(--petrol-dunkel) 0%,var(--petrol) 40%,var(--tuerkis) 75%,var(--himmel) 100%);
+         background-size:200% 200%;animation:fliessen 14s ease-in-out infinite;box-shadow:0 8px 26px rgba(9,70,80,.28)}
+  header::before,header::after{content:"";position:absolute;border-radius:50%;pointer-events:none;filter:blur(2px)}
+  header::before{left:55%;top:-70px;width:160px;height:160px;background:radial-gradient(circle,rgba(255,176,32,.55),transparent 68%)}
+  header::after{right:-50px;bottom:-90px;width:200px;height:200px;background:radial-gradient(circle,rgba(255,107,91,.5),transparent 68%)}
+  header > *{position:relative;z-index:1}
+  @keyframes fliessen{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  h1{color:#fff;font-size:23px;font-weight:800;letter-spacing:.2px;margin-bottom:2px}
+  h1 .fz{color:var(--mango)}
+  #gruss{font-size:13px;color:#d9f6ff;margin:0 0 10px}
+  nav{background:rgba(255,255,255,.14);border-radius:14px;padding:4px;display:inline-flex}
+  nav button{background:transparent;border:0;color:#ecfbff;font-weight:700;border-radius:10px}
+  nav button:hover{background:rgba(255,255,255,.16)}
+  nav button.aktiv{background:#fff;color:var(--petrol);box-shadow:inset 0 -3px 0 var(--mango),0 2px 8px rgba(0,0,0,.15)}
+  .karte{position:relative;overflow:hidden;background:var(--flaeche);border:0;border-radius:20px;
+         box-shadow:0 1px 2px rgba(14,107,120,.06),0 10px 28px rgba(14,107,120,.09)}
+  .karte::before{content:"";position:absolute;left:0;top:0;right:0;height:5px;background:var(--streifen,var(--petrol))}
+  section > .karte:nth-of-type(5n+1){--streifen:linear-gradient(90deg,var(--petrol),var(--tuerkis))}
+  section > .karte:nth-of-type(5n+2){--streifen:linear-gradient(90deg,var(--koralle),var(--mango))}
+  section > .karte:nth-of-type(5n+3){--streifen:linear-gradient(90deg,var(--mint),var(--himmel))}
+  section > .karte:nth-of-type(5n+4){--streifen:linear-gradient(90deg,var(--lila),var(--beere))}
+  section > .karte:nth-of-type(5n+5){--streifen:linear-gradient(90deg,var(--mango),var(--mint))}
+  .spalten .karte:first-child{--streifen:linear-gradient(90deg,var(--mint),var(--mango),var(--beere))}
+  .spalten .karte:last-child{--streifen:linear-gradient(90deg,var(--hellblau),var(--himmel),var(--petrol))}
+  h2{color:var(--petrol);font-size:17px;font-weight:800}
+  input,select{border:1.5px solid var(--line);border-radius:12px;background:#fbfeff;color:var(--text)}
+  input:focus,select:focus{outline:none;border-color:var(--tuerkis);box-shadow:0 0 0 3px rgba(19,163,168,.22)}
+  button.btn{background:linear-gradient(120deg,var(--koralle),var(--mango));border-radius:12px;font-weight:800;color:#fff;
+             box-shadow:0 4px 12px rgba(255,107,91,.35);transition:transform .1s}
+  button.btn:hover{transform:translateY(-1px);filter:saturate(1.15)} button.btn:active{transform:translateY(0)}
+  button.klein,label.klein{border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--petrol);font-weight:700}
+  button.klein:hover,label.klein:hover{background:#ecfaf9;border-color:var(--tuerkis)}
+  label.klein{display:inline-block;font-size:13px;padding:4px 10px;cursor:pointer}
+  .vegan-tag{color:var(--vegan);border-color:var(--vegan);background:#f3ebfd}
+  .tag{border:1.5px solid var(--line);border-radius:12px;transition:background .15s}
+  .tag:hover{background:#ecfaf9}
+  .tag.heute{border-color:var(--koralle)}
+  .tag.gewaehlt{background:linear-gradient(135deg,var(--petrol),var(--tuerkis));color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(14,107,120,.3)}
+  .balken{background:#e6f3f5;border-radius:999px}
+  .st-ok{background:#d6f7e8;color:#147a50} .st-teil{background:#fff1d1;color:#8f5b00}
+  .st-nein{background:#ffe1e8;color:#b3173f} .st-leer{background:#eef4f5;color:var(--muted)}
+  .leicht{background:#bdeefc} .mittelint{background:#4cc9f0} .intensiv{background:#0e6b78}
+  .k-gesund{background:#dbf8ea;color:#147a50} .k-mittel{background:#fff1d1;color:#8a5600} .k-ungesund{background:#ffe1e8;color:#b3173f}
+  .k-leicht{background:#e6f8fe;color:#0e6b78} .k-mittelint{background:#bdeefc;color:#094650} .k-intensiv{background:linear-gradient(135deg,#0e6b78,#13a3a8);color:#fff}
+  .kachel{border-radius:14px;transition:transform .12s,box-shadow .12s}
+  .kachel:hover{transform:translateY(-2px) rotate(-.5deg);box-shadow:0 8px 16px rgba(14,107,120,.16);border-color:transparent}
+  .kachel .vg{color:var(--vegan)}
+  .pie{box-shadow:0 0 0 8px #fff,0 8px 24px rgba(14,107,120,.18)}
+  .tipp{border-radius:3px} .tipp.st-teil-rand{border-color:var(--mittel)} .tipp.st-nein-rand{border-color:var(--ungesund)}
+  table th{color:var(--petrol)}
+  .hero{background:linear-gradient(150deg,#ffffff 0%,#eefbfd 60%,#fff6e6 100%)!important}
+  /* Überraschung: Konfetti + Hinweis, wenn ein Ziel neu erreicht wird */
+  .konfetti{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;z-index:99;pointer-events:none;
+            animation:fallen linear forwards}
+  @keyframes fallen{to{transform:translate(var(--dx),105vh) rotate(var(--rot));opacity:.9}}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;z-index:100;
+         background:var(--petrol-dunkel);color:#fff;padding:12px 18px;border-radius:14px;font-weight:700;
+         box-shadow:0 10px 30px rgba(10,70,80,.35);transition:all .35s;max-width:90vw;text-align:center}
+  .toast.zeigen{opacity:1;transform:translate(-50%,0)}
+  /* Tagesringe */
+  .hero{background:linear-gradient(160deg,#ffffff 0%,#f0fafd 100%)}
+  .hero-kopf{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+  .hero-titel{font-size:20px;font-weight:800;color:var(--petrol)}
+  .serie{font-weight:800;font-size:15px;padding:6px 12px;border-radius:999px;background:#eef3f4;color:var(--muted);white-space:nowrap}
+  .serie.an{background:linear-gradient(120deg,#ffb347,#ff6a3d);color:#fff;box-shadow:0 4px 14px rgba(255,106,61,.35);animation:flackern 1.8s ease-in-out infinite}
+  @keyframes flackern{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+  .hero-inhalt{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .ringe{width:180px;height:180px;flex:none;transform:rotate(-90deg)}
+  .ringe circle{fill:none;stroke-width:14;stroke-linecap:round}
+  .ringe .spur{stroke:#e7f1f3}
+  .ringe .ring{transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)}
+  .ringe .r1{stroke:var(--mint)} .ringe .r2{stroke:var(--himmel)} .ringe .r3{stroke:var(--mango)}
+  .ringe.zu .ring{filter:drop-shadow(0 0 7px rgba(255,176,32,.8))}
+  .ringe text{transform:rotate(90deg);transform-origin:90px 90px;text-anchor:middle;fill:var(--petrol)}
+  .score{font-size:34px;font-weight:800} .score-lbl{font-size:11px;fill:var(--muted)!important;letter-spacing:1px;text-transform:uppercase}
+  .ring-legende{flex:1;min-width:150px;display:grid;gap:10px}
+  .rl{display:flex;align-items:center;gap:10px}
+  .rl .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;flex:none}
+  .rl b{display:block;font-size:15px} .rl span{font-size:12px;color:var(--muted)}
+  /* Abzeichen */
+  .badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+  .badge{text-align:center;padding:12px 6px;border-radius:16px;background:#f4f8f9;font-size:12px;color:var(--muted)}
+  .badge .em{font-size:30px;display:block;filter:grayscale(1);opacity:.35;margin-bottom:4px}
+  .badge.frei{background:linear-gradient(160deg,#e3f6ec,#dff1fb);color:var(--petrol);font-weight:700}
+  .badge.frei .em{filter:none;opacity:1}
+  /* Abzeichen-Popup */
+  .modal-bg{position:fixed;inset:0;background:rgba(10,70,80,.55);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:120}
+  .modal-bg.versteckt{display:none}
+  .modal{position:relative;overflow:hidden;background:#fff;border-radius:26px;padding:30px 26px 24px;width:min(340px,88vw);text-align:center;
+         animation:aufpoppen .55s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes aufpoppen{from{transform:scale(.6) translateY(40px);opacity:0}to{transform:none;opacity:1}}
+  .modal-glanz{position:absolute;left:50%;top:70px;width:420px;height:420px;margin:-210px 0 0 -210px;
+         background:repeating-conic-gradient(from 0deg,rgba(76,201,240,.35) 0 9deg,transparent 9deg 22deg,rgba(255,176,32,.35) 22deg 31deg,transparent 31deg 45deg);
+         background-size:100% 100%;animation:drehen 8s linear infinite;-webkit-mask:radial-gradient(circle,#000 30%,transparent 70%);mask:radial-gradient(circle,#000 30%,transparent 70%)}
+  @keyframes drehen{to{transform:rotate(360deg)}}
+  .modal-emoji{position:relative;font-size:72px;animation:huepfen 1.2s ease-in-out infinite}
+  @keyframes huepfen{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-10px) rotate(4deg)}}
+  .modal-klein{position:relative;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:8px}
+  .modal-name{position:relative;font-size:24px;font-weight:800;color:var(--petrol);margin:4px 0}
+  .modal-text{position:relative;color:var(--text);margin-bottom:18px}
+  .modal .btn{position:relative}
+  @media (prefers-reduced-motion:reduce){header,.serie.an,.modal,.modal-emoji,.modal-glanz{animation:none}.konfetti{display:none}}
+  /* Stammdaten: Lebensmittel und Aktivitäten immer nebeneinander (auch auf dem Handy) */
+  .spalten{grid-template-columns:1fr 1fr}
+  .spalten .karte{min-width:0}
+  .kacheln{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+  @media (max-width:600px){
+    main:has(#stammdaten:not(.versteckt)){padding:10px 8px}
+    .spalten{gap:8px}
+    .spalten .karte{padding:10px 8px}
+    .spalten h2{font-size:15px}
+    .spalten h2 .muted{display:block;font-size:12px}
+    .spalten .zeile{gap:6px}
+    .spalten .zeile > *{flex:1 1 100%;min-width:0}
+    .spalten .zeile label{font-size:13px}
+    .kacheln{grid-template-columns:1fr;gap:6px;max-height:62vh}
+    .kachel{min-height:52px;padding:8px 7px 6px;font-size:13px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Wottsch grad eis<span class="fz">?</span></h1>
+  <p id="gruss"></p>
+  <nav>
+    <button data-seite="tagebuch" class="aktiv">Tagebuch</button>
+    <button data-seite="bewegung">Bewegung</button>
+    <button data-seite="ziele">Ziele</button>
+    <button data-seite="auswertung">Auswertung</button>
+    <button data-seite="stammdaten">Stammdaten</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ===== 2. SEITE TAGEBUCH ===== -->
+  <section id="tagebuch">
+    <div class="karte hero">
+      <div class="hero-kopf">
+        <div><div class="hero-titel" id="heroTitel">Heute</div><div class="muted" id="heroSub"></div></div>
+        <div class="serie" id="serie" title="Tage in Folge mit mind. 50 % gesund"></div>
+      </div>
+      <div class="hero-inhalt">
+        <svg class="ringe" viewBox="0 0 180 180" id="ringe">
+          <circle class="spur" cx="90" cy="90" r="76"/><circle class="ring r1" cx="90" cy="90" r="76" style="stroke-dasharray:477.5;stroke-dashoffset:477.5"/>
+          <circle class="spur" cx="90" cy="90" r="58"/><circle class="ring r2" cx="90" cy="90" r="58" style="stroke-dasharray:364.4;stroke-dashoffset:364.4"/>
+          <circle class="spur" cx="90" cy="90" r="40"/><circle class="ring r3" cx="90" cy="90" r="40" style="stroke-dasharray:251.3;stroke-dashoffset:251.3"/>
+          <text x="90" y="88" class="score" id="score">0</text><text x="90" y="108" class="score-lbl" id="scoreLbl">Punkte</text>
+        </svg>
+        <div class="ring-legende" id="ringLegende"></div>
+      </div>
+    </div>
+    <div class="karte">
+      <div class="kal-kopf">
+        <button class="klein" id="monatZurueck">&larr;</button>
+        <strong id="monatTitel"></strong>
+        <button class="klein" id="monatVor">&rarr;</button>
+      </div>
+      <div class="kal" id="kalender"></div>
+    </div>
+    <div class="karte">
+      <h2 id="tagTitel"></h2>
+      <div class="zeile">
+        <input id="eintragFood" class="grow" list="foodVorschlag" placeholder="Lebensmittel tippen oder auswählen …" autocomplete="off">
+        <datalist id="foodVorschlag"></datalist>
+        <input id="eintragPortion" type="number" min="1" value="1" style="width:70px" title="Portionen">
+        <button class="btn" id="eintragAdd">Eintragen</button>
+      </div>
+      <ul class="liste" id="tagesListe"></ul>
+      <div id="tagesBalken" style="margin-top:12px"></div>
+    </div>
+    <div class="karte">
+      <h2>Wochenübersicht</h2>
+      <table id="wochenTabelle"></table>
+    </div>
+  </section>
+
+
+  <!-- ===== 3b. SEITE BEWEGUNG ===== -->
+  <section id="bewegung" class="versteckt">
+    <div class="karte">
+      <h2 id="bewTagTitel"></h2>
+      <div class="zeile">
+        <input id="bewAkt" class="grow" list="aktVorschlag" placeholder="Aktivität tippen oder auswählen …" autocomplete="off">
+        <datalist id="aktVorschlag"></datalist>
+        <input id="bewMin" type="number" min="1" value="30" style="width:80px" title="Minuten"> Min.
+        <button class="btn" id="bewAdd">Eintragen</button>
+      </div>
+      <div class="zeile" style="margin-top:4px">
+        Schritte an diesem Tag:
+        <input id="schritte" type="number" min="0" step="100" placeholder="z. B. 8500" style="width:120px">
+        <button class="btn" id="schritteSave">Speichern</button>
+        <span class="muted" id="schritteInfo"></span>
+      </div>
+      <div class="zeile">
+        <label class="klein">Schritte importieren (CSV-Datei) <input type="file" id="schrittImport" accept=".csv,.txt" style="display:none"></label>
+      </div>
+      <div id="importPanel" class="versteckt" style="border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px;font-size:14px">
+        <div class="zeile">Spalte Datum: <select id="impDatum"></select></div>
+        <div class="zeile">Spalte Schritte: <select id="impSchritte"></select></div>
+        <div class="zeile">Mehrere Zeilen pro Tag:
+          <select id="impModus"><option value="summe">zusammenzählen</option><option value="max">höchsten Wert nehmen</option></select>
+        </div>
+        <div id="impVorschau" class="muted"></div>
+        <div class="zeile" style="margin-top:6px">
+          <button class="btn" id="impOk">Importieren</button><button class="klein" id="impAbbruch">Abbrechen</button>
+        </div>
+      </div>
+      <p class="muted">Das Datum wählst du im Kalender unter «Tagebuch». Schritte von Hand eintragen oder als CSV aus der Uhr-/Handy-App importieren.</p>
+      <ul class="liste" id="bewListe"></ul>
+    </div>
+    <div class="karte">
+      <h2>Bewegung diese Woche</h2>
+      <table id="bewWoche"></table>
+    </div>
+    <div class="karte">
+      <h2>Vorschläge für dich</h2>
+      <p class="muted" id="bewStand"></p>
+      <ul class="liste" id="vorschlagListe"></ul>
+      <button class="klein" id="neueVorschlaege" style="margin-top:8px">Andere Vorschläge</button>
+    </div>
+  </section>
+
+  <!-- ===== 4. SEITE ZIELE ===== -->
+  <section id="ziele" class="versteckt">
+    <div class="karte">
+      <h2>Neues Ziel</h2>
+      <div class="zeile">
+        Anteil
+        <select id="zielMetrik">
+          <option value="gesund">gesund</option>
+          <option value="mittel">neutral/mittel</option>
+          <option value="ungesund">ungesund</option>
+          <option value="vegan">vegan</option>
+          <option value="bewegung">Bewegung (Minuten)</option>
+          <option value="schritte">Schritte (Ø pro Tag)</option>
+        </select>
+        <select id="zielVergleich">
+          <option value="min">mindestens</option>
+          <option value="max">höchstens</option>
+        </select>
+        <input id="zielWert" type="number" min="0" value="60" style="width:70px"> <span id="zielEinheit">%</span>
+        pro
+        <select id="zielZeitraum">
+          <option value="tag">Tag</option>
+          <option value="woche">Woche</option>
+          <option value="monat">Monat</option>
+        </select>
+        <button class="btn" id="zielAdd">Speichern</button>
+      </div>
+      <p class="muted">Bewertet wird für den Zeitraum des im Tagebuch gewählten Datums.
+        Teilweise erreicht = mindestens 75 % des Ziels geschafft.</p>
+    </div>
+    <div class="karte">
+      <h2>Meine Ziele</h2>
+      <ul class="liste" id="zielListe"></ul>
+    </div>
+  </section>
+
+  <!-- ===== 5. SEITE AUSWERTUNG ===== -->
+  <section id="auswertung" class="versteckt">
+    <div class="karte">
+      <div class="zeile">
+        <select id="auswZeitraum">
+          <option value="tag">Tag</option>
+          <option value="woche" selected>Woche</option>
+          <option value="monat">Monat</option>
+        </select>
+        <span class="muted" id="auswTitel"></span>
+      </div>
+      <div class="auswertung">
+        <div class="pie" id="pie"></div>
+        <div class="legende" id="legende"></div>
+      </div>
+    </div>
+    <div class="karte">
+      <h2>Abzeichen <span class="muted" id="badgeZahl"></span></h2>
+      <div class="badges" id="badges"></div>
+    </div>
+    <div class="karte">
+      <h2>Tipps zu deinen Zielen</h2>
+      <div id="tipps"></div>
+    </div>
+    <div class="karte">
+      <h2>Bewegung im Zeitraum</h2>
+      <div class="auswertung">
+        <div class="pie" id="bewPie"></div>
+        <div class="legende" id="bewLegende"></div>
+      </div>
+    </div>
+    <div class="karte">
+      <h2>Datensicherung</h2>
+      <div class="zeile">
+        <button class="klein" id="exportBtn">Daten exportieren (Datei)</button>
+        <label class="klein">Daten importieren <input type="file" id="importFile" accept=".json" style="display:none"></label>
+      </div>
+      <p class="muted">Die Daten liegen nur in diesem Browser auf diesem Gerät. Exportiere regelmässig eine Sicherung.
+        <span id="letzteSicherung"></span></p>
+    </div>
+  </section>
+  <!-- ===== 6. SEITE STAMMDATEN (Lebensmittel, Aktivitäten) als Kacheln ===== -->
+  <section id="stammdaten" class="versteckt">
+    <div class="spalten">
+      <div class="karte">
+        <h2>Lebensmittel <span class="muted" id="foodAnzahl"></span></h2>
+        <div class="zeile">
+          <input id="foodName" placeholder="Neues Lebensmittel" class="grow">
+          <select id="foodCat">
+            <option value="gesund">gesund</option>
+            <option value="mittel">mittel</option>
+            <option value="ungesund">ungesund</option>
+          </select>
+          <label><input type="checkbox" id="foodVegan"> vegan</label>
+          <button class="btn" id="foodAdd">+</button>
+        </div>
+        <div class="zeile">
+          <input id="foodSuche" placeholder="Suchen …" class="grow">
+          <select id="foodFilter">
+            <option value="">alle</option><option value="gesund">gesund</option><option value="mittel">mittel</option>
+            <option value="ungesund">ungesund</option><option value="vegan">vegan</option>
+          </select>
+        </div>
+        <div class="kacheln" id="foodListe"></div>
+      </div>
+      <div class="karte">
+        <h2>Aktivitäten <span class="muted" id="aktAnzahl"></span></h2>
+        <div class="zeile">
+          <input id="aktName" placeholder="Neue Aktivität" class="grow">
+          <select id="aktInt">
+            <option value="leicht">leicht</option>
+            <option value="mittel">mittel</option>
+            <option value="intensiv">intensiv</option>
+          </select>
+          <button class="btn" id="aktAdd">+</button>
+        </div>
+        <div class="zeile">
+          <input id="aktSuche" placeholder="Suchen …" class="grow">
+          <select id="aktFilter">
+            <option value="">alle</option><option value="leicht">leicht</option><option value="mittel">mittel</option><option value="intensiv">intensiv</option>
+          </select>
+        </div>
+        <div class="kacheln" id="aktListe"></div>
+      </div>
+    </div>
+    <p class="muted">Tipp: Auf eine Kachel tippen, um sie zu bearbeiten.</p>
+  </section>
+</main>
+<div class="modal-bg versteckt" id="modal">
+  <div class="modal">
+    <div class="modal-glanz"></div>
+    <div class="modal-emoji" id="modalEmoji">🏆</div>
+    <div class="modal-klein">Neues Abzeichen freigeschaltet</div>
+    <div class="modal-name" id="modalName"></div>
+    <div class="modal-text" id="modalText"></div>
+    <button class="btn" onclick="schliesseModal()">Weiter so!</button>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   A) DATEN: laden und speichern (im Browser, localStorage)
+   ================================================================ */
+const SPEICHER = 'essenApp_v1';
+
+/* Startliste: 100 gängige Lebensmittel  [Name, Kategorie, vegan]
+   G = gesund (grün), M = neutral/mittel (orange), U = ungesund (rot)
+   Die Einteilung ist ein Vorschlag – in der App jederzeit änderbar. */
+const STANDARD = [
+  // --- gesund: Früchte ---
+  ['Apfel','G',1],['Banane','G',1],['Birne','G',1],['Orange','G',1],['Mandarine','G',1],['Kiwi','G',1],
+  ['Erdbeeren','G',1],['Heidelbeeren','G',1],['Trauben','G',1],['Ananas','G',1],['Wassermelone','G',1],['Mango','G',1],
+  // --- gesund: Gemüse ---
+  ['Karotte','G',1],['Brokkoli','G',1],['Blumenkohl','G',1],['Spinat','G',1],['Kopfsalat','G',1],['Gurke','G',1],
+  ['Tomate','G',1],['Peperoni','G',1],['Zucchetti','G',1],['Aubergine','G',1],['Zwiebel','G',1],['Knoblauch','G',1],
+  ['Lauch','G',1],['Kohlrabi','G',1],['Fenchel','G',1],['Randen','G',1],['Erbsen','G',1],['Grüne Bohnen','G',1],
+  ['Champignons','G',1],['Süsskartoffel','G',1],['Kartoffeln (gekocht)','G',1],
+  // --- gesund: Hülsenfrüchte, Vollkorn, Nüsse ---
+  ['Linsen','G',1],['Kichererbsen','G',1],['Kidneybohnen','G',1],['Tofu','G',1],['Haferflocken','G',1],
+  ['Vollkornbrot','G',1],['Vollkornreis','G',1],['Quinoa','G',1],['Vollkornteigwaren','G',1],['Baumnüsse','G',1],
+  ['Mandeln','G',1],['Leinsamen','G',1],['Avocado','G',1],
+  // --- gesund: tierisch ---
+  ['Lachs','G',0],['Forelle','G',0],['Ei','G',0],['Naturjoghurt','G',0],['Hüttenkäse','G',0],['Pouletbrust','G',0],['Magerquark','G',0],
+  // --- gesund: Getränke ---
+  ['Wasser','G',1],['Tee ungesüsst','G',1],
+  // --- neutral/mittel ---
+  ['Weissbrot','M',1],['Teigwaren','M',1],['Weisser Reis','M',1],['Couscous','M',1],['Hartkäse','M',0],['Mozzarella','M',0],
+  ['Milch','M',0],['Butter','M',0],['Rindfleisch','M',0],['Schweinefleisch','M',0],['Kochschinken','M',0],['Fruchtjoghurt','M',0],
+  ['Orangensaft','M',1],['Pizza Margherita','M',0],['Rösti','M',0],['Hummus','M',1],['Erdnussbutter','M',1],['Dunkle Schokolade','M',0],
+  ['Honig','M',0],['Konfitüre','M',1],['Kaffee','M',1],['Haferdrink','M',1],['Datteln','M',1],['Gipfeli','M',0],
+  ['Sushi','M',0],['Thunfisch (Dose)','M',0],['Olivenöl','M',1],
+  // --- ungesund ---
+  ['Milchschokolade','U',0],['Chips','U',1],['Pommes frites','U',1],['Cervelat','U',0],['Salami','U',0],['Bratwurst','U',0],
+  ['Hamburger','U',0],['Glace','U',0],['Gummibärchen','U',0],['Cola / Süssgetränk','U',1],['Energy Drink','U',1],['Kuchen','U',0],
+  ['Guetzli','U',0],['Berliner','U',0],['Chicken Nuggets','U',0],['Kebab','U',0],['Mayonnaise','U',0],['Bier','U',1]
+];
+const KAT = { G: 'gesund', M: 'mittel', U: 'ungesund' };
+
+let daten = JSON.parse(localStorage.getItem(SPEICHER) || 'null') || {
+  foods: [],
+  entries: [],   // { id, date:'2026-11-24', foodId, portions }
+  goals: []      // { id, metric, cmp:'min'|'max', value, period }
+};
+let geradeGespeichert = false;
+let cache = null;                           // Zwischenspeicher, siehe tagesCache()
+function speichern() { cache = null; localStorage.setItem(SPEICHER, JSON.stringify(daten)); geradeGespeichert = true; }
+/* Browser bitten, die Daten dauerhaft zu behalten (nicht bei Speicherplatzmangel automatisch löschen) */
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+function neueId() { return Date.now() + Math.floor(Math.random() * 1000); }
+
+/* Bewegung: Startliste Aktivitäten [Name, Intensität] */
+const STANDARD_AKT = [
+  // leicht: Alltag, Erholung
+  ['Spazieren','leicht'],['Yoga','leicht'],['Dehnen / Stretching','leicht'],['Pilates','leicht'],['Gartenarbeit','leicht'],
+  ['Hausarbeit','leicht'],['Mit dem Hund gehen','leicht'],['Tai-Chi','leicht'],['Golf','leicht'],
+  // mittel: leicht ausser Atem, Sprechen geht noch
+  ['Zügiges Gehen','mittel'],['Treppensteigen','mittel'],['Velofahren','mittel'],['Wandern','mittel'],['Schwimmen','mittel'],
+  ['Tanzen','mittel'],['Krafttraining','mittel'],['Nordic Walking','mittel'],['Aqua-Fit','mittel'],['Rudern','mittel'],
+  ['Inline-Skaten','mittel'],['Langlauf','mittel'],['Schneeschuhlaufen','mittel'],['Tischtennis','mittel'],['Volleyball','mittel'],
+  // intensiv: deutlich ausser Atem
+  ['Joggen','intensiv'],['Fussball','intensiv'],['Fitnesskurs','intensiv'],['Skifahren','intensiv'],['Tennis','intensiv'],
+  ['Unihockey','intensiv'],['Basketball','intensiv'],['Squash','intensiv'],['Spinning','intensiv'],['Seilspringen','intensiv'],
+  ['Bergwandern','intensiv'],['Klettern','intensiv'],['HIIT-Training','intensiv'],['Badminton','intensiv'],['Mountainbike','intensiv']
+];
+
+/* Vorschläge: kurze Ideen, je nach Ziel/Stand der Woche */
+const VORSCHLAEGE = [
+  { akt: 'Zügiges Gehen', min: 30, text: 'Mittagspause: 30 Min. zügig gehen' },
+  { akt: 'Velofahren', min: 20, text: 'Arbeitsweg oder Einkauf mit dem Velo' },
+  { akt: 'Treppensteigen', min: 10, text: 'Lift auslassen: 10 Min. Treppe' },
+  { akt: 'Krafttraining', min: 20, text: '20 Min. Kraft zu Hause (Kniebeugen, Liegestütze, Plank)' },
+  { akt: 'Dehnen / Stretching', min: 10, text: 'Abends 10 Min. dehnen' },
+  { akt: 'Wandern', min: 90, text: 'Am Wochenende eine Wanderung' },
+  { akt: 'Joggen', min: 25, text: 'Lockerer Lauf, 25 Min.' },
+  { akt: 'Spazieren', min: 15, text: 'Nach dem Essen 15 Min. spazieren' },
+  { akt: 'Schwimmen', min: 30, text: '30 Min. schwimmen' },
+  { akt: 'Yoga', min: 20, text: '20 Min. Yoga zum Tagesstart' }
+];
+/* Startlisten einmalig ergänzen (auch bei bestehenden Daten und nach einem Import).
+   Bereits vorhandene Namen werden nicht doppelt angelegt. */
+function ergaenzeStartlisten() {
+if (!daten.standardGeladen) {
+  const vorhanden = new Set(daten.foods.map(f => f.name.toLowerCase()));
+  let nr = Math.max(0, ...daten.foods.map(f => f.id)) + 1;
+  STANDARD.forEach(([name, k, v]) => {
+    if (!vorhanden.has(name.toLowerCase())) daten.foods.push({ id: nr++, name, cat: KAT[k], vegan: !!v });
+  });
+  daten.standardGeladen = true;
+  speichern();
+}
+
+if (!daten.activities) daten.activities = [];
+if (!daten.moves) daten.moves = [];
+if (!daten.goals) daten.goals = [];
+if (!daten.steps) daten.steps = {};   // { '2026-11-24': 8500 }   // moves: { id, date, actId, minutes }
+if (!daten.aktGeladen) {                    // Startliste einmalig ergänzen, ohne Doppelte
+  const vorhanden = new Set(daten.activities.map(a => a.name.toLowerCase()));
+  let nr = Math.max(0, ...daten.activities.map(a => a.id)) + 1;
+  STANDARD_AKT.forEach(([name, intensity]) => { if (!vorhanden.has(name.toLowerCase())) daten.activities.push({ id: nr++, name, intensity }); });
+  daten.aktGeladen = true;
+  speichern();
+}
+}
+ergaenzeStartlisten();
+
+/* ================================================================
+   B) DATUMS-HILFEN
+   ================================================================ */
+/* Text sicher in HTML einsetzen (z. B. Namen mit < > & " ') */
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const ausIso = s => { const [y, m, t] = s.split('-').map(Number); return new Date(y, m - 1, t); };
+const schoen = s => ausIso(s).toLocaleDateString('de-CH', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+function wochenStart(d) { const x = new Date(d); const wt = (x.getDay() + 6) % 7; x.setDate(x.getDate() - wt); return x; } // Montag
+function zeitraum(datumIso, art) {          // gibt [von, bis] als ISO-Text zurück
+  const d = ausIso(datumIso);
+  if (art === 'tag') return [datumIso, datumIso];
+  if (art === 'woche') { const s = wochenStart(d); const e = new Date(s); e.setDate(s.getDate() + 6); return [iso(s), iso(e)]; }
+  const s = new Date(d.getFullYear(), d.getMonth(), 1), e = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  return [iso(s), iso(e)];
+}
+
+let gewaehlt = iso(new Date());             // im Kalender gewählter Tag
+let kalMonat = new Date();                  // angezeigter Monat
+
+/* ================================================================
+   C) RECHNEN: Anteile in Prozent für einen Zeitraum
+   ================================================================ */
+function food(id) { return daten.foods.find(f => f.id === id); }
+/* Zwischenspeicher pro Tag – wird bei jeder Änderung neu aufgebaut (macht Auswertungen schnell) */
+function tagesCache() {
+  if (cache) return cache;
+  cache = { essen: {}, bew: {} };
+  daten.entries.forEach(e => (cache.essen[e.date] = cache.essen[e.date] || []).push(e));
+  daten.moves.forEach(m => (cache.bew[m.date] = cache.bew[m.date] || []).push(m));
+  return cache;
+}
+function statistik(von, bis) {
+  const s = { gesund: 0, mittel: 0, ungesund: 0, vegan: 0, total: 0 };
+  const liste = von === bis ? (tagesCache().essen[von] || []) : daten.entries.filter(e => e.date >= von && e.date <= bis);
+  liste.forEach(e => {
+    const f = food(e.foodId); if (!f) return;
+    s[f.cat] += e.portions; s.total += e.portions;
+    if (f.vegan) s.vegan += e.portions;
+  });
+  const p = k => s.total ? Math.round(s[k] / s.total * 100) : 0;
+  return { ...s, pGesund: p('gesund'), pMittel: p('mittel'), pUngesund: p('ungesund'), pVegan: p('vegan') };
+}
+
+/* Bewegung: Minuten pro Intensität in einem Zeitraum */
+function akt(id) { return daten.activities.find(a => a.id === id); }
+function bewStat(von, bis) {
+  const s = { leicht: 0, mittel: 0, intensiv: 0, total: 0, anzahl: 0 };
+  const liste = von === bis ? (tagesCache().bew[von] || []) : daten.moves.filter(m => m.date >= von && m.date <= bis);
+  liste.forEach(m => {
+    const a = akt(m.actId) || { intensity: 'mittel' };
+    s[a.intensity] += m.minutes; s.total += m.minutes; s.anzahl++;
+  });
+  return s;
+}
+
+/* Schritte im Zeitraum: Summe, Tage mit Eintrag, Durchschnitt */
+function schrittStat(von, bis) {
+  const tage = Object.keys(daten.steps).filter(d => d >= von && d <= bis && daten.steps[d] > 0);
+  const summe = tage.reduce((a, d) => a + daten.steps[d], 0);
+  return { summe, tage: tage.length, schnitt: tage.length ? Math.round(summe / tage.length) : 0, liste: tage.sort() };
+}
+const tsd = n => n.toLocaleString('de-CH');
+
+/* Ziel bewerten: erreicht / teilweise / nicht erreicht */
+function bewerte(ziel, datum = gewaehlt) {
+  const [von, bis] = zeitraum(datum, ziel.period);
+  let ist;
+  if (ziel.metric === 'bewegung') {
+    ist = bewStat(von, bis).total;          // Minuten (0 zählt als Wert, nicht als "keine Daten")
+  } else if (ziel.metric === 'schritte') {
+    const ss = schrittStat(von, bis);
+    if (!ss.tage) return { text: 'keine Daten', klasse: 'st-leer', ist: null };
+    ist = ss.schnitt;                       // Durchschnitt der Tage mit Schritt-Eintrag
+  } else {
+    const st = statistik(von, bis);
+    if (!st.total) return { text: 'keine Daten', klasse: 'st-leer', ist: null };
+    ist = { gesund: st.pGesund, mittel: st.pMittel, ungesund: st.pUngesund, vegan: st.pVegan }[ziel.metric];
+  }
+  let text, klasse;
+  if (ziel.cmp === 'min') {
+    if (ist >= ziel.value) { text = 'erreicht'; klasse = 'st-ok'; }
+    else if (ist >= ziel.value * 0.75) { text = 'teilweise erreicht'; klasse = 'st-teil'; }
+    else { text = 'nicht erreicht'; klasse = 'st-nein'; }
+  } else {
+    if (ist <= ziel.value) { text = 'erreicht'; klasse = 'st-ok'; }
+    else if (ist <= ziel.value * 1.25) { text = 'teilweise erreicht'; klasse = 'st-teil'; }
+    else { text = 'nicht erreicht'; klasse = 'st-nein'; }
+  }
+  return { text, klasse, ist };
+}
+
+/* Farbiger Balken (gesund | mittel | ungesund) */
+function balken(st) {
+  if (!st.total) return '<span class="muted">noch keine Einträge</span>';
+  return `<div class="balken">
+    <div class="gesund" style="width:${st.pGesund}%"></div>
+    <div class="mittel" style="width:${st.pMittel}%"></div>
+    <div class="ungesund" style="width:${st.pUngesund}%"></div></div>`;
+}
+
+/* ================================================================
+   D) ANZEIGEN (jede Seite hat eine eigene "zeichne"-Funktion)
+   ================================================================ */
+function zeichneKalender() {
+  const j = kalMonat.getFullYear(), m = kalMonat.getMonth();
+  document.getElementById('monatTitel').textContent = kalMonat.toLocaleDateString('de-CH', { month: 'long', year: 'numeric' });
+  let html = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(t => `<div class="wt">${t}</div>`).join('');
+  const leer = (new Date(j, m, 1).getDay() + 6) % 7;
+  for (let i = 0; i < leer; i++) html += '<div></div>';
+  const tage = new Date(j, m + 1, 0).getDate(), heute = iso(new Date());
+  for (let t = 1; t <= tage; t++) {
+    const d = iso(new Date(j, m, t)), st = statistik(d, d);
+    const dots = ['gesund', 'mittel', 'ungesund'].filter(k => st[k] > 0).map(k => `<span class="${k}"></span>`).join('')
+      + (bewStat(d, d).total ? '<span class="bew"></span>' : '');
+    html += `<div class="tag ${d === heute ? 'heute' : ''} ${d === gewaehlt ? 'gewaehlt' : ''}" data-datum="${d}">${t}<div class="dots">${dots}</div></div>`;
+  }
+  const kal = document.getElementById('kalender');
+  kal.innerHTML = html;
+  kal.querySelectorAll('.tag').forEach(el => el.onclick = () => { gewaehlt = el.dataset.datum; alles(); });
+}
+
+function zeichneTag() {
+  document.getElementById('tagTitel').textContent = 'Tagesübersicht ' + schoen(gewaehlt);
+  const katText = { gesund: 'gesund', mittel: 'neutral/mittel', ungesund: 'ungesund' };
+  document.getElementById('foodVorschlag').innerHTML = daten.foods.slice().sort((a, b) => a.name.localeCompare(b.name))
+    .map(f => `<option value="${esc(f.name)}">${katText[f.cat]}${f.vegan ? ' · vegan' : ''}</option>`).join('');
+  const liste = daten.entries.filter(e => e.date === gewaehlt);
+  document.getElementById('tagesListe').innerHTML = liste.map(e => {
+    const f = food(e.foodId) || { name: '(gelöscht)', cat: 'mittel' };
+    return `<li><span class="punkt ${f.cat}"></span><span class="grow">${e.portions} × ${esc(f.name)}</span>
+      ${f.vegan ? '<span class="vegan-tag">vegan</span>' : ''}
+      <button class="klein" onclick="loescheEintrag(${e.id})">✕</button></li>`;
+  }).join('') || '<li class="muted">Noch nichts eingetragen.</li>';
+  const st = statistik(gewaehlt, gewaehlt);
+  document.getElementById('tagesBalken').innerHTML = balken(st) +
+    (st.total ? `<p class="muted">gesund ${st.pGesund} % · mittel ${st.pMittel} % · ungesund ${st.pUngesund} % · vegan ${st.pVegan} %</p>` : '');
+}
+
+function zeichneWoche() {
+  const s = wochenStart(ausIso(gewaehlt));
+  let html = '<tr><th>Tag</th><th style="width:50%">Verteilung</th><th>gesund</th><th>vegan</th></tr>';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(s); d.setDate(s.getDate() + i);
+    const di = iso(d), st = statistik(di, di);
+    html += `<tr><td>${schoen(di)}</td><td>${balken(st)}</td><td>${st.total ? st.pGesund + ' %' : '–'}</td><td>${st.total ? st.pVegan + ' %' : '–'}</td></tr>`;
+  }
+  const [von, bis] = zeitraum(gewaehlt, 'woche'), w = statistik(von, bis);
+  html += `<tr><th>Woche</th><td>${balken(w)}</td><th>${w.total ? w.pGesund + ' %' : '–'}</th><th>${w.total ? w.pVegan + ' %' : '–'}</th></tr>`;
+  document.getElementById('wochenTabelle').innerHTML = html;
+}
+
+function zeichneFoods() {
+  const q = (document.getElementById('foodSuche').value || '').toLowerCase(), fi = document.getElementById('foodFilter').value;
+  const namen = { gesund: 'gesund', mittel: 'mittel', ungesund: 'ungesund' };
+  const liste = daten.foods.filter(f => f.name.toLowerCase().includes(q) && (!fi || (fi === 'vegan' ? f.vegan : f.cat === fi)))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  document.getElementById('foodAnzahl').textContent = `(${liste.length} von ${daten.foods.length})`;
+  document.getElementById('foodListe').innerHTML = liste.map(f => `
+    <div class="kachel k-${f.cat}" onclick="bearbeiteFood(${f.id})" title="Bearbeiten">
+      <button class="x" onclick="event.stopPropagation(); loescheFood(${f.id})" title="Löschen">✕</button>
+      <span class="nm">${esc(f.name)}</span>
+      <span class="info"><span class="punkt ${f.cat}" style="width:8px;height:8px"></span>${namen[f.cat]}${f.vegan ? '<span class="vg">vegan</span>' : ''}</span>
+    </div>`).join('') || '<span class="muted">Keine Treffer.</span>';
+}
+function bearbeiteFood(id) {
+  const f = food(id); if (!f) return;
+  const name = prompt('Name:', f.name); if (name === null) return;
+  const k = prompt('Kategorie: g = gesund, m = mittel, u = ungesund', f.cat[0]); if (k === null) return;
+  f.name = name.trim() || f.name;
+  f.cat = { g: 'gesund', m: 'mittel', u: 'ungesund' }[k.trim().toLowerCase()[0]] || f.cat;
+  f.vegan = confirm(`Ist «${f.name}» vegan?`);
+  speichern(); alles();
+}
+
+function zeichneZiele() {
+  const nm = { gesund: '% gesund', mittel: '% neutral/mittel', ungesund: '% ungesund', vegan: '% vegan', bewegung: 'Min. Bewegung', schritte: 'Schritte/Tag (Ø)' };
+  const zr = { tag: 'Tag', woche: 'Woche', monat: 'Monat' };
+  document.getElementById('zielListe').innerHTML = daten.goals.map(z => {
+    const b = bewerte(z), einheit = { bewegung: ' Min.', schritte: ' Schritte' }[z.metric] || ' %';
+    return `<li><span class="grow">${z.cmp === 'min' ? 'Mindestens' : 'Höchstens'} ${z.metric === 'schritte' ? tsd(z.value) : z.value} ${nm[z.metric]} pro ${zr[z.period]}
+      ${b.ist !== null ? `<span class="muted">· Ist: ${z.metric === 'schritte' ? tsd(b.ist) : b.ist}${einheit}</span>` : ''}</span>
+      <span class="status ${b.klasse}">${b.text}</span>
+      <button class="klein" onclick="loescheZiel(${z.id})">✕</button></li>`;
+  }).join('') || '<li class="muted">Noch keine Ziele.</li>';
+}
+
+function zeichneAuswertung() {
+  const art = document.getElementById('auswZeitraum').value;
+  const [von, bis] = zeitraum(gewaehlt, art), st = statistik(von, bis);
+  document.getElementById('auswTitel').textContent = von === bis ? schoen(von) : schoen(von) + ' – ' + schoen(bis);
+  const pie = document.getElementById('pie');
+  if (!st.total) { pie.style.background = 'var(--line)'; }
+  else {
+    const a = st.gesund / st.total * 100, b = a + st.mittel / st.total * 100;
+    // Kreisdiagramm mit CSS "conic-gradient": Grün bis a %, Orange bis b %, danach Rot
+    pie.style.background = `conic-gradient(var(--gesund) 0 ${a}%, var(--mittel) ${a}% ${b}%, var(--ungesund) ${b}% 100%)`;
+  }
+  document.getElementById('legende').innerHTML = st.total ? `
+    <div><span class="punkt gesund"></span> gesund: <strong>${st.pGesund} %</strong></div>
+    <div><span class="punkt mittel"></span> neutral/mittel: <strong>${st.pMittel} %</strong></div>
+    <div><span class="punkt ungesund"></span> ungesund: <strong>${st.pUngesund} %</strong></div>
+    <div><span class="punkt" style="background:var(--vegan)"></span> davon vegan: <strong>${st.pVegan} %</strong></div>
+    <div class="muted">${st.total} Portionen im Zeitraum</div>` : '<span class="muted">Keine Einträge in diesem Zeitraum.</span>';
+}
+
+/* Bewegung anzeigen */
+const INT_KLASSE = { leicht: 'leicht', mittel: 'mittelint', intensiv: 'intensiv' };
+function bewBalken(s, max) {
+  if (!s.total) return '<span class="muted">–</span>';
+  const w = k => (s[k] / max * 100) + '%';
+  return `<div class="balken"><div class="leicht" style="width:${w('leicht')}"></div>
+    <div class="mittelint" style="width:${w('mittel')}"></div><div class="intensiv" style="width:${w('intensiv')}"></div></div>`;
+}
+function zeichneBewegung() {
+  document.getElementById('bewTagTitel').textContent = 'Bewegung am ' + schoen(gewaehlt);
+  document.getElementById('schritte').value = daten.steps[gewaehlt] || '';
+  document.getElementById('schritteInfo').textContent = daten.steps[gewaehlt]
+    ? `≈ ${(daten.steps[gewaehlt] * 0.75 / 1000).toFixed(1)} km` : '';
+  document.getElementById('aktVorschlag').innerHTML = daten.activities.slice().sort((a, b) => a.name.localeCompare(b.name))
+    .map(a => `<option value="${esc(a.name)}">${a.intensity}</option>`).join('');
+  document.getElementById('bewListe').innerHTML = daten.moves.filter(m => m.date === gewaehlt).map(m => {
+    const a = akt(m.actId) || { name: '(gelöscht)', intensity: 'mittel' };
+    return `<li><span class="punkt ${INT_KLASSE[a.intensity]}"></span><span class="grow">${esc(a.name)} · ${m.minutes} Min.</span>
+      <button class="klein" onclick="loescheBew(${m.id})">✕</button></li>`;
+  }).join('') || '<li class="muted">Noch keine Bewegung eingetragen.</li>';
+
+  const s = wochenStart(ausIso(gewaehlt)), tage = [];
+  for (let i = 0; i < 7; i++) { const d = new Date(s); d.setDate(s.getDate() + i); tage.push(iso(d)); }
+  const stats = tage.map(d => bewStat(d, d)), max = Math.max(60, ...stats.map(x => x.total));
+  let html = '<tr><th>Tag</th><th style="width:45%">Minuten (hell = leicht, dunkel = intensiv)</th><th>Min.</th><th>Schritte</th></tr>';
+  tage.forEach((d, i) => html += `<tr><td>${schoen(d)}</td><td>${bewBalken(stats[i], max)}</td><td>${stats[i].total || '–'}</td><td>${daten.steps[d] ? tsd(daten.steps[d]) : '–'}</td></tr>`);
+  const [von, bis] = zeitraum(gewaehlt, 'woche'), w = bewStat(von, bis), sw = schrittStat(von, bis);
+  html += `<tr><th>Woche</th><td class="muted">leicht ${w.leicht} · mittel ${w.mittel} · intensiv ${w.intensiv} Min.</td><th>${w.total}</th><th>${sw.tage ? 'Ø ' + tsd(sw.schnitt) : '–'}</th></tr>`;
+  document.getElementById('bewWoche').innerHTML = html;
+
+  zeichneAktKacheln();
+}
+/* Vorschläge: Wochenziel aus den Zielen (Bewegung/Woche/mindestens), sonst 150 Min. (Empfehlung für Erwachsene) */
+let vorschlagStart = 0;
+function zeichneAktKacheln() {
+  const q = (document.getElementById('aktSuche').value || '').toLowerCase(), fi = document.getElementById('aktFilter').value;
+  const liste = daten.activities.filter(a => a.name.toLowerCase().includes(q) && (!fi || a.intensity === fi))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  document.getElementById('aktAnzahl').textContent = `(${liste.length} von ${daten.activities.length})`;
+  document.getElementById('aktListe').innerHTML = liste.map(a => `
+    <div class="kachel k-${INT_KLASSE[a.intensity]}" onclick="bearbeiteAkt(${a.id})" title="Bearbeiten">
+      <button class="x" onclick="event.stopPropagation(); loescheAkt(${a.id})" title="Löschen" style="color:inherit">✕</button>
+      <span class="nm">${esc(a.name)}</span><span class="info">${a.intensity}</span>
+    </div>`).join('') || '<span class="muted">Keine Treffer.</span>';
+}
+function bearbeiteAkt(id) {
+  const a = akt(id); if (!a) return;
+  const name = prompt('Name:', a.name); if (name === null) return;
+  const k = prompt('Intensität: l = leicht, m = mittel, i = intensiv', a.intensity[0]); if (k === null) return;
+  a.name = name.trim() || a.name;
+  a.intensity = { l: 'leicht', m: 'mittel', i: 'intensiv' }[k.trim().toLowerCase()[0]] || a.intensity;
+  speichern(); alles();
+}
+function zeichneVorschlaege() {
+  const ziel = daten.goals.find(z => z.metric === 'bewegung' && z.period === 'woche' && z.cmp === 'min');
+  const soll = ziel ? ziel.value : 150;
+  const [von, bis] = zeitraum(gewaehlt, 'woche'), ist = bewStat(von, bis).total;
+  const rest = Math.max(0, soll - ist);
+  const heuteIso = iso(new Date());
+  const vorbei = heuteIso > bis, wort = vorbei ? 'In dieser Woche' : 'Diese Woche';
+  const resttage = Math.max(1, Math.round((ausIso(bis) - ausIso(gewaehlt > heuteIso ? gewaehlt : heuteIso)) / 864e5) + 1);
+  document.getElementById('bewStand').innerHTML = rest
+    ? `${wort}: <strong>${ist} von ${soll} Min.</strong> ${ziel ? '(dein Ziel)' : '(Empfehlung: 150 Min. pro Woche)'} – es ${vorbei ? 'fehlten' : 'fehlen'} ${rest} Min.`
+      + (vorbei ? '' : `, also rund ${Math.ceil(rest / resttage)} Min. pro verbleibendem Tag.`)
+    : `${wort}: <strong>${ist} Min.</strong> – Wochenziel von ${soll} Min. erreicht. Weiter so!`;
+  // drei Vorschläge, rotierend; bei wenig Restbedarf kurze zuerst
+  const liste = VORSCHLAEGE.slice().sort((a, b) => rest < 60 ? a.min - b.min : 0);
+  const auswahl = [0, 1, 2].map(i => liste[(vorschlagStart + i) % liste.length]);
+  document.getElementById('vorschlagListe').innerHTML = auswahl.map(v => {
+    const a = daten.activities.find(x => x.name === v.akt);
+    return `<li><span class="punkt ${a ? INT_KLASSE[a.intensity] : 'bew'}"></span><span class="grow">${v.text}</span>
+      ${a ? `<button class="klein" onclick="vorschlagEintragen(${a.id}, ${v.min})">+ ${v.min} Min. eintragen</button>` : ''}</li>`;
+  }).join('');
+}
+function vorschlagEintragen(actId, minutes) {
+  daten.moves.push({ id: neueId(), date: gewaehlt, actId, minutes }); speichern(); alles();
+}
+
+/* ================================================================
+   TIPPS, wenn ein Ziel nicht (ganz) erreicht ist
+   ================================================================ */
+const TAUSCH = {   // ungünstiges Lebensmittel → bessere Alternative
+  'chips': 'Gemüsesticks mit Hummus oder ungesalzene Nüsse', 'milchschokolade': '2 Stück dunkle Schokolade oder eine Frucht',
+  'cola / süssgetränk': 'Wasser mit Zitrone oder ungesüssten Tee', 'energy drink': 'Grüntee oder Kaffee ohne Zucker',
+  'glace': 'Naturjoghurt mit Beeren', 'gummibärchen': 'Trauben oder Datteln', 'guetzli': 'Apfel mit ein paar Mandeln',
+  'kuchen': 'Früchte mit Naturjoghurt', 'berliner': 'Vollkornbrot mit Konfitüre', 'pommes frites': 'Ofenkartoffeln oder Süsskartoffel aus dem Ofen',
+  'hamburger': 'Vollkornwrap mit Poulet und Salat', 'kebab': 'Vollkornwrap mit Kichererbsen und Gemüse', 'chicken nuggets': 'Pouletbrust aus der Pfanne',
+  'cervelat': 'Pouletbrust oder Hummus', 'salami': 'Hüttenkäse oder Hummus aufs Brot', 'bratwurst': 'Pouletbrust oder Tofu-Wurst',
+  'mayonnaise': 'Joghurtsauce mit Kräutern', 'bier': 'alkoholfreies Bier oder Wasser',
+  'weissbrot': 'Vollkornbrot', 'teigwaren': 'Vollkornteigwaren', 'weisser reis': 'Vollkornreis oder Quinoa',
+  'gipfeli': 'Vollkornbrot oder Haferflocken', 'fruchtjoghurt': 'Naturjoghurt mit frischen Früchten', 'orangensaft': 'eine ganze Orange',
+  'pizza margherita': 'Pizza mit viel Gemüse und Salat dazu', 'rösti': 'Gschwellti (gekochte Kartoffeln)',
+  'milch': 'Haferdrink', 'butter': 'Olivenöl oder Avocado', 'hartkäse': 'Hummus', 'mozzarella': 'Tofu oder Avocado',
+  'rindfleisch': 'Linsen oder Kidneybohnen', 'schweinefleisch': 'Tofu oder Kichererbsen', 'kochschinken': 'Hummus',
+  'pouletbrust': 'Tofu', 'ei': 'Rührtofu', 'naturjoghurt': 'Sojajoghurt', 'lachs': 'Tofu oder Linsen'
+};
+const TAUSCH_VEGAN = {   // bei Vegan-Zielen: nur pflanzliche Alternativen
+  'bratwurst': 'Tofu- oder Seitanwurst', 'cervelat': 'Tofuwurst', 'salami': 'Hummus aufs Brot', 'kochschinken': 'Hummus',
+  'chicken nuggets': 'Tofu-Nuggets', 'hamburger': 'Veggie-Burger (pflanzlich)', 'kebab': 'Falafel im Fladenbrot',
+  'milchschokolade': 'vegane dunkle Schokolade oder eine Frucht', 'dunkle schokolade': 'vegane dunkle Schokolade',
+  'glace': 'Sorbet', 'gummibärchen': 'Trauben oder vegane Fruchtgummis', 'kuchen': 'Früchte', 'guetzli': 'Apfel mit Mandeln',
+  'berliner': 'Vollkornbrot mit Konfitüre', 'mayonnaise': 'vegane Mayonnaise oder Hummus', 'pizza margherita': 'Pizza mit Gemüse ohne Käse',
+  'gipfeli': 'Vollkornbrot mit Konfitüre', 'fruchtjoghurt': 'Sojajoghurt mit Früchten', 'naturjoghurt': 'Sojajoghurt',
+  'magerquark': 'Sojajoghurt', 'hüttenkäse': 'Hummus', 'honig': 'Ahornsirup', 'pouletbrust': 'Tofu', 'sushi': 'Gemüse-Sushi',
+  'thunfisch (dose)': 'Kichererbsen', 'forelle': 'Tofu oder Linsen', 'rösti': 'Rösti mit Öl statt Butter'
+};
+const WT = d => ausIso(d).toLocaleDateString('de-CH', { weekday: 'short' }).replace('.', '');
+function heuteOderGewaehlt() { const h = iso(new Date()); return gewaehlt > h ? gewaehlt : h; }
+
+/* Häufigste Lebensmittel im Zeitraum (mit Wochentagen, an denen sie vorkamen) */
+function topFoods(von, bis, filter, n = 3) {
+  const sum = {}, tage = {};
+  daten.entries.filter(e => e.date >= von && e.date <= bis).forEach(e => {
+    const f = food(e.foodId); if (!f || !filter(f)) return;
+    sum[f.id] = (sum[f.id] || 0) + e.portions;
+    (tage[f.id] = tage[f.id] || new Set()).add(e.date);
+  });
+  return Object.entries(sum).sort((a, b) => b[1] - a[1]).slice(0, n)
+    .map(([id, p]) => ({ f: food(Number(id)), p, tage: [...tage[id]].sort() }));
+}
+/* Lieblings-Lebensmittel der letzten 30 Tage (für "mehr davon"-Tipps) */
+function favoriten(filter, n = 3) {
+  const s = new Date(ausIso(gewaehlt)); s.setDate(s.getDate() - 30);
+  const top = topFoods(iso(s), gewaehlt, filter, n).map(x => x.f);
+  return top.length ? top : [];
+}
+function plusKnopf(f) {
+  return `<button class="klein" onclick="schnellEintrag(${f.id})">+ ${esc(f.name)}</button>`;
+}
+function schnellEintrag(foodId) {
+  daten.entries.push({ id: neueId(), date: gewaehlt, foodId, portions: 1 }); speichern(); alles();
+}
+
+/* Tausch-Liste mit Wirkung: nach jedem Tausch wird der neue Anteil berechnet */
+function tauschMitWirkung(top, st, metric, cmp, X) {
+  let g = st.gesund, u = st.ungesund, m = st.mittel, v = st.vegan, erreicht = false;
+  const t = st.total;
+  return '<ul>' + top.map(({ f, p, tage }) => {
+    if (metric === 'vegan') { if (!f.vegan) v += p; }
+    else { if (f.cat === 'ungesund') u -= p; if (f.cat === 'mittel') m -= p; g += p; }
+    const neu = Math.round(({ gesund: g, ungesund: u, mittel: m, vegan: v }[metric]) / t * 100);
+    const ok = cmp === 'min' ? neu >= X * 100 : neu <= X * 100;
+    const wirkung = erreicht ? '' : ` → <strong>${neu} %</strong> ${metric}${ok ? ' ✓ Ziel erreicht' : ''}`;
+    if (ok) erreicht = true;
+    const k = f.name.toLowerCase(), alt = (metric === 'vegan' ? TAUSCH_VEGAN[k] : null) || TAUSCH[k] || 'eine Frucht oder Gemüse';
+    return `<li><strong>${esc(f.name)}</strong> ${p}× (${tage.map(WT).join(', ')}) – besser: ${alt}${wirkung}</li>`;
+  }).join('') + '</ul>';
+}
+
+function tippsFuer(z) {
+  const [von, bis] = zeitraum(gewaehlt, z.period), st = statistik(von, bis);
+  const X = z.value / 100, t = st.total, out = [];
+  const zr = { tag: 'heute', woche: 'diese Woche', monat: 'diesen Monat' }[z.period];
+
+  /* ---------- BEWEGUNG ---------- */
+  if (z.metric === 'bewegung') {
+    const bs = bewStat(von, bis), ist = bs.total;
+    if (z.cmp !== 'min') return ['Plane bewusst Ruhetage ein – Erholung gehört zum Training.'];
+    const fehlt = z.value - ist;
+    // Lieblingsaktivitäten (letzte 30 Tage) mit ihrer üblichen Dauer
+    const s30 = new Date(ausIso(gewaehlt)); s30.setDate(s30.getDate() - 30);
+    const proAkt = {};
+    daten.moves.filter(mv => mv.date >= iso(s30) && mv.date <= gewaehlt).forEach(mv => {
+      const x = proAkt[mv.actId] = proAkt[mv.actId] || { min: 0, n: 0 }; x.min += mv.minutes; x.n++;
+    });
+    let fav = Object.entries(proAkt).sort((a, b) => b[1].min - a[1].min).slice(0, 3)
+      .map(([id, x]) => ({ a: akt(Number(id)), dauer: Math.round(x.min / x.n) })).filter(x => x.a);
+    const eigene = fav.length > 0;
+    if (!eigene) fav = ['Zügiges Gehen', 'Velofahren', 'Krafttraining'].map(n => ({ a: daten.activities.find(a => a.name === n), dauer: 30 })).filter(x => x.a);
+
+    // freie Tage und verbleibende Tage im Zeitraum
+    const alleTage = []; for (let d = ausIso(von); iso(d) <= bis; d.setDate(d.getDate() + 1)) alleTage.push(iso(d));
+    const mitBew = new Set(daten.moves.filter(mv => mv.date >= von && mv.date <= bis).map(mv => mv.date));
+    const start = heuteOderGewaehlt(), rest = alleTage.filter(d => d >= start);
+    const ohne = alleTage.filter(d => d < start && !mitBew.has(d));
+
+    out.push(`Es fehlen <strong>${fehlt} Min.</strong> ${zr}. Bisher: ${ist} Min. in ${bs.anzahl} Einheiten.`);
+    if (z.period !== 'tag' && ohne.length) out.push(`Tage ohne Bewegung bisher: <strong>${ohne.map(WT).join(', ')}</strong>.`);
+    out.push(eigene ? `Deine häufigsten Aktivitäten: ${fav.map(x => `${esc(x.a.name)} (meist ${x.dauer} Min.)`).join(', ')}.`
+                    : 'Noch keine eigenen Aktivitäten erfasst – hier ein Startplan:');
+
+    // konkreter Plan: Lücke mit Lieblingsaktivitäten auf die verbleibenden Tage verteilen
+    if (rest.length && fav.length && fehlt > 0) {
+      let offen = fehlt, i = 0; const plan = [];
+      for (const d of rest) {
+        if (offen <= 0) break;
+        const x = fav[i % fav.length], min = Math.min(offen, Math.max(15, Math.min(x.dauer, Math.ceil(fehlt / rest.length / 5) * 5 || x.dauer)));
+        plan.push({ d, x, min }); offen -= min; i++;
+      }
+      if (offen > 0) plan[plan.length - 1].min += offen;   // Rest auf den letzten Tag
+      out.push('<ul>' + plan.map(({ d, x, min }) => `<li><strong>${WT(d)} ${ausIso(d).getDate()}.${ausIso(d).getMonth() + 1}.</strong>: ${esc(x.a.name)} ${min} Min.
+        ${d === gewaehlt ? `<button class="klein" onclick="vorschlagEintragen(${x.a.id}, ${min})">erledigt – eintragen</button>` : ''}</li>`).join('') + '</ul>');
+    }
+    // Intensität: leichte Minuten aufwerten
+    if (bs.leicht > bs.total / 2) {
+      const leichtAkt = Object.keys(proAkt).map(Number).map(akt).find(a => a && a.intensity === 'leicht');
+      out.push(`${bs.leicht} von ${ist} Min. waren leicht. ${leichtAkt ? `Mach aus «${esc(leichtAkt.name)}» öfter «Zügiges Gehen» oder Velofahren` : 'Steigere das Tempo ein wenig'} – das zählt als mittlere Intensität.`);
+    }
+    if (!bs.intensiv && fehlt > 60) out.push('Zeit knapp? Intensiv zählt etwa doppelt: 20 Min. Joggen oder Seilspringen wirken ungefähr wie 40 Min. zügiges Gehen.');
+    return out;
+  }
+
+  /* ---------- SCHRITTE ---------- */
+  if (z.metric === 'schritte') {
+    const ss = schrittStat(von, bis);
+    if (z.cmp !== 'min') return ['Schritte sind selten zu viel – gönn dir aber Ruhetage nach langen Touren.'];
+    const fehlt = z.value - ss.schnitt, min = Math.round(fehlt / 100);   // ca. 100 Schritte pro Minute zügiges Gehen
+    out.push(`Im Schnitt fehlen <strong>${tsd(fehlt)} Schritte pro Tag</strong> – das sind rund <strong>${min} Min. zügiges Gehen</strong> (≈ ${(fehlt * 0.75 / 1000).toFixed(1)} km).`);
+    const unter = ss.liste.filter(d => daten.steps[d] < z.value);
+    if (unter.length) out.push('Tage unter dem Ziel: <ul>' + unter.map(d => `<li>${WT(d)} ${ausIso(d).getDate()}.${ausIso(d).getMonth() + 1}.: ${tsd(daten.steps[d])} (−${tsd(z.value - daten.steps[d])})</li>`).join('') + '</ul>');
+    const best = ss.liste.slice().sort((a, b) => daten.steps[b] - daten.steps[a])[0];
+    if (best) out.push(`Dein bester Tag: ${WT(best)} mit ${tsd(daten.steps[best])} Schritten – was war da anders? Das lässt sich oft wiederholen.`);
+    const ideen = [];
+    if (min > 0) ideen.push(`${Math.min(min, 20)} Min. Spaziergang nach dem Mittag- oder Abendessen (≈ ${tsd(Math.min(min, 20) * 100)} Schritte)`);
+    ideen.push('eine Haltestelle früher aussteigen (≈ 1 000–1 500 Schritte)', 'Telefonate im Gehen führen (10 Min. ≈ 1 000 Schritte)', 'Treppe statt Lift');
+    out.push('So holst du sie: <ul>' + ideen.map(i => `<li>${i}</li>`).join('') + '</ul>');
+    return out;
+  }
+
+  /* ---------- ERNÄHRUNG ---------- */
+  if (!t) return ['Für diesen Zeitraum gibt es noch keine Einträge. Trage zuerst ein, was du gegessen hast.'];
+
+  if (z.metric === 'gesund' && z.cmp === 'min') {
+    const n = Math.max(1, Math.ceil((X * t - st.gesund) / (1 - X)));
+    out.push(`Variante 1 – tauschen: deine häufigsten nicht-gesunden Lebensmittel ${zr} und was der Tausch bringt:`);
+    const top = topFoods(von, bis, f => f.cat !== 'gesund');
+    if (top.length) out.push(tauschMitWirkung(top, st, 'gesund', 'min', X));
+    const fav = favoriten(f => f.cat === 'gesund');
+    out.push(`Variante 2 – ergänzen: <strong>${n} gesunde Portion${n > 1 ? 'en' : ''}</strong> mehr ${zr}` +
+      (fav.length ? `, z. B. von deinen Favoriten: ${fav.map(plusKnopf).join(' ')}` : `, z. B. ${['Apfel', 'Karotte', 'Naturjoghurt'].map(nm => findeName(daten.foods, nm)).filter(Boolean).map(plusKnopf).join(' ')}`));
+  }
+  if (z.metric === 'ungesund' && z.cmp === 'max') {
+    const k = Math.max(1, Math.ceil(st.ungesund - X * t));
+    out.push(`Ersetze <strong>${k} ungesunde Portion${k > 1 ? 'en' : ''}</strong> ${zr}. Deine häufigsten – und was der Tausch bringt:`);
+    const top = topFoods(von, bis, f => f.cat === 'ungesund');
+    if (top.length) out.push(tauschMitWirkung(top, st, 'ungesund', 'max', X));
+    const tageU = new Set(top.flatMap(x => x.tage));
+    if (z.period !== 'tag' && tageU.size) out.push(`Ungesundes vor allem am ${[...tageU].sort().map(WT).join(', ')} – plane für diese Tage eine Alternative (z. B. Snack vorbereiten).`);
+  }
+  if (z.metric === 'mittel' && z.cmp === 'max') {
+    out.push('Deine häufigsten Lebensmittel der mittleren Kategorie und die gesündere Variante:');
+    const top = topFoods(von, bis, f => f.cat === 'mittel');
+    if (top.length) out.push(tauschMitWirkung(top, st, 'mittel', 'max', X));
+  }
+  if (z.metric === 'vegan' && z.cmp === 'min') {
+    const n = Math.max(1, Math.ceil((X * t - st.vegan) / (1 - X)));
+    out.push('Deine häufigsten nicht-veganen Lebensmittel und die pflanzliche Alternative:');
+    const top = topFoods(von, bis, f => !f.vegan);
+    if (top.length) out.push(tauschMitWirkung(top, st, 'vegan', 'min', X));
+    const fav = favoriten(f => f.vegan && f.cat === 'gesund');
+    if (fav.length) out.push(`Oder ${n} vegane Portion${n > 1 ? 'en' : ''} mehr von deinen Favoriten: ${fav.map(plusKnopf).join(' ')}`);
+  }
+  if (!out.length) {
+    out.push(z.cmp === 'min' ? `Erhöhe den Anteil «${z.metric}» schrittweise – eine Portion pro Tag mehr.`
+                             : `Reduziere den Anteil «${z.metric}» schrittweise – eine Portion pro Tag weniger.`);
+  }
+  return out;
+}
+
+function zeichneTipps() {
+  const box = document.getElementById('tipps');
+  if (!daten.goals.length) { box.innerHTML = '<p class="muted">Lege unter «Ziele» ein Ziel fest – dann erscheinen hier passende Tipps.</p>'; return; }
+  const nm = { gesund: '% gesund', mittel: '% neutral/mittel', ungesund: '% ungesund', vegan: '% vegan', bewegung: 'Min. Bewegung', schritte: 'Schritte/Tag (Ø)' };
+  const zr = { tag: 'Tag', woche: 'Woche', monat: 'Monat' };
+  const offen = daten.goals.map(z => ({ z, b: bewerte(z) })).filter(x => x.b.klasse === 'st-nein' || x.b.klasse === 'st-teil');
+  if (!offen.length) { box.innerHTML = '<p>Alle Ziele mit Daten sind erreicht – super! Weiter so.</p>'; return; }
+  box.innerHTML = offen.map(({ z, b }) => {
+    const einheit = { bewegung: ' Min.', schritte: ' Schritte' }[z.metric] || ' %';
+    const tipps = tippsFuer(z).map(t => t.startsWith('<ul>') ? t : `<div style="margin:4px 0;font-size:14px">${t}</div>`).join('');
+    return `<div class="tipp ${b.klasse}-rand">
+      <div><span class="status ${b.klasse}">${b.text}</span>
+        <strong style="margin-left:6px">${z.cmp === 'min' ? 'Mind.' : 'Höchst.'} ${z.metric === 'schritte' ? tsd(z.value) : z.value} ${nm[z.metric]} pro ${zr[z.period]}</strong>
+        <span class="muted">· Ist: ${z.metric === 'schritte' ? tsd(b.ist) : b.ist}${einheit}</span></div>${tipps}</div>`;
+  }).join('') + '<p class="muted">Bezieht sich auf den im Tagebuch gewählten Tag bzw. dessen Woche/Monat.</p>';
+}
+
+function zeichneBewAuswertung() {
+  const art = document.getElementById('auswZeitraum').value;
+  const [von, bis] = zeitraum(gewaehlt, art), s = bewStat(von, bis);
+  const pie = document.getElementById('bewPie');
+  if (!s.total) pie.style.background = 'var(--line)';
+  else {
+    const a = s.leicht / s.total * 100, b = a + s.mittel / s.total * 100;
+    pie.style.background = `conic-gradient(#bdeefc 0 ${a}%, #4cc9f0 ${a}% ${b}%, #0e6b78 ${b}% 100%)`;
+  }
+  const p = k => s.total ? Math.round(s[k] / s.total * 100) : 0;
+  const tage = Math.round((ausIso(bis) - ausIso(von)) / 864e5) + 1;
+  document.getElementById('bewLegende').innerHTML = s.total ? `
+    <div><strong>${s.total} Minuten</strong> in ${s.anzahl} Einheiten</div>
+    <div class="muted">Ø ${Math.round(s.total / tage)} Min. pro Tag</div>
+    <div><span class="punkt leicht"></span> leicht: ${s.leicht} Min. (${p('leicht')} %)</div>
+    <div><span class="punkt mittelint"></span> mittel: ${s.mittel} Min. (${p('mittel')} %)</div>
+    <div><span class="punkt intensiv"></span> intensiv: ${s.intensiv} Min. (${p('intensiv')} %)</div>`
+    : '<span class="muted">Keine Bewegung in diesem Zeitraum.</span>';
+  const ss = schrittStat(von, bis);
+  document.getElementById('bewLegende').innerHTML += ss.tage
+    ? `<div style="margin-top:10px"><strong>${tsd(ss.summe)} Schritte</strong> · Ø ${tsd(ss.schnitt)} pro Tag (${ss.tage} Tage erfasst) · ≈ ${(ss.summe * 0.75 / 1000).toFixed(1)} km</div>`
+    : '<div class="muted" style="margin-top:10px">Keine Schritte erfasst.</div>';
+}
+
+function zeigeSicherung() {
+  const el = document.getElementById('letzteSicherung'); if (!el) return;
+  el.textContent = daten.letzteSicherung ? 'Letzte Sicherung: ' + schoen(daten.letzteSicherung) + '.' : 'Noch keine Sicherung erstellt.';
+}
+/* ===== Überraschung: Begrüssung, Konfetti und Hinweis bei neu erreichten Zielen ===== */
+function zeigeGruss() {
+  const h = new Date().getHours();
+  const g = h < 11 ? 'Guten Morgen' : h < 14 ? 'Schönen Mittag' : h < 18 ? 'Schönen Nachmittag' : 'Guten Abend';
+  const ok = daten.goals.filter(z => bewerte(z, iso(new Date())).klasse === 'st-ok').length;
+  document.getElementById('gruss').textContent = `${g} · ${new Date().toLocaleDateString('de-CH', { weekday: 'long', day: 'numeric', month: 'long' })}`
+    + (daten.goals.length ? ` · heute ${ok} von ${daten.goals.length} Zielen erreicht` : '');
+}
+let erreichtVorher = null, zieleVorher = [];
+function pruefeZiele() {
+  const erreicht = daten.goals.filter(z => bewerte(z).klasse === 'st-ok').map(z => z.id);
+  if (erreichtVorher && geradeGespeichert) {
+    // nur Ziele, die schon vorher existierten und jetzt neu erreicht sind (kein Konfetti beim blossen Anlegen)
+    const neu = erreicht.filter(id => !erreichtVorher.includes(id) && zieleVorher.includes(id));
+    if (neu.length) feiern(neu.length === 1 ? 'Ziel erreicht – stark! 🎉' : `${neu.length} Ziele erreicht – stark! 🎉`);
+  }
+  erreichtVorher = erreicht; zieleVorher = daten.goals.map(z => z.id); geradeGespeichert = false;
+}
+function feiern(text) {
+  const farben = ['#0e6b78', '#4cc9f0', '#ff6b5b', '#ffb020', '#2ec486', '#9b5de5', '#ff4f7b'];
+  for (let i = 0; i < 90; i++) {
+    const k = document.createElement('span'); k.className = 'konfetti';
+    k.style.left = Math.random() * 100 + 'vw'; k.style.background = farben[i % farben.length];
+    k.style.setProperty('--dx', (Math.random() * 160 - 80) + 'px'); k.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+    k.style.animationDuration = (1.6 + Math.random() * 1.6) + 's'; k.style.animationDelay = Math.random() * .3 + 's';
+    if (i % 3 === 0) k.style.borderRadius = '50%';
+    document.body.appendChild(k); setTimeout(() => k.remove(), 3600);
+  }
+  if (!text) return;
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = text; document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('zeigen'));
+  setTimeout(() => { t.classList.remove('zeigen'); setTimeout(() => t.remove(), 400); }, 2600);
+}
+
+/* ===== Tagesringe: Essen, Bewegung, Schritte ===== */
+function ringZiele() {
+  const g = daten.goals.find(z => z.metric === 'gesund' && z.cmp === 'min');
+  const b = daten.goals.find(z => z.metric === 'bewegung' && z.cmp === 'min');
+  const s = daten.goals.find(z => z.metric === 'schritte' && z.cmp === 'min');
+  const proTag = z => z.period === 'woche' ? Math.round(z.value / 7) : z.period === 'monat' ? Math.round(z.value / 30) : z.value;
+  return { gesund: Math.max(1, g ? g.value : 60), minuten: Math.max(1, b ? proTag(b) : 30), schritte: Math.max(1, s ? s.value : 10000) };
+}
+function ringWerte(d) {
+  const z = ringZiele(), st = statistik(d, d), bw = bewStat(d, d).total, sc = daten.steps[d] || 0;
+  const p = [st.total ? st.pGesund / z.gesund : 0, bw / z.minuten, sc / z.schritte];
+  return { z, st, bw, sc, p, alleZu: p.every(x => x >= 1), score: Math.round(p.reduce((a, x) => a + Math.min(1, x), 0) / 3 * 100) };
+}
+function tagGruen(d) { const st = statistik(d, d); return st.total > 0 && st.pGesund >= 50; }
+function serieBis(d) {           // Tage in Folge mit mind. 50 % gesund (heutiger Tag zählt erst, wenn erfüllt)
+  let x = ausIso(d), n = 0;
+  if (!tagGruen(iso(x))) x.setDate(x.getDate() - 1);
+  while (tagGruen(iso(x)) && n < 3650) { n++; x.setDate(x.getDate() - 1); }
+  return n;
+}
+function zeichneRinge() {
+  const w = ringWerte(gewaehlt), heute = gewaehlt === iso(new Date());
+  document.getElementById('heroTitel').textContent = heute ? 'Heute' : schoen(gewaehlt);
+  const sprueche = ['Los geht’s – der Tag gehört dir!', 'Guter Start, bleib dran!', 'Mehr als die Hälfte geschafft!', 'Fast da – noch ein kleiner Schritt!', 'Alle Ringe zu – Wahnsinn! 💫'];
+  document.getElementById('heroSub').textContent = w.alleZu ? sprueche[4] : sprueche[Math.min(3, Math.floor(w.score / 26))];
+  [[1, 76], [2, 58], [3, 40]].forEach(([i, r], k) => {
+    const el = document.querySelector('.ringe .r' + i), u = 2 * Math.PI * r;
+    el.style.strokeDasharray = u; el.style.strokeDashoffset = u * (1 - Math.min(1, w.p[k]));
+  });
+  document.getElementById('ringe').classList.toggle('zu', w.alleZu);
+  document.getElementById('score').textContent = w.score;
+  document.getElementById('ringLegende').innerHTML = `
+    <div class="rl"><div class="ic" style="background:#e3f6ec">🥗</div><div><b>${w.st.total ? w.st.pGesund : 0} % gesund</b><span>Ziel ${w.z.gesund} %</span></div></div>
+    <div class="rl"><div class="ic" style="background:#e3f3fb">🏃</div><div><b>${w.bw} Min. Bewegung</b><span>Ziel ${w.z.minuten} Min.</span></div></div>
+    <div class="rl"><div class="ic" style="background:#dff1f1">👟</div><div><b>${tsd(w.sc)} Schritte</b><span>Ziel ${tsd(w.z.schritte)}</span></div></div>`;
+  const n = serieBis(gewaehlt), sEl = document.getElementById('serie');
+  sEl.textContent = n ? `🔥 ${n} ${n === 1 ? 'Tag' : 'Tage'}` : '🔥 0';
+  sEl.classList.toggle('an', n >= 2);
+}
+
+/* ===== Abzeichen ===== */
+const ABZEICHEN = [
+  // Ernährung
+  { id: 'erster', em: '🍽️', name: 'Erster Bissen', text: 'Dein erster Eintrag im Tagebuch.', test: () => daten.entries.length >= 1 },
+  { id: 'gemuese', em: '🥦', name: 'Gemüse-Held', text: '5 gesunde Portionen an einem Tag.', test: () => tageMitDaten().some(d => statistik(d, d).gesund >= 5) },
+  { id: 'bunt', em: '🌈', name: 'Bunter Teller', text: '5 verschiedene gesunde Lebensmittel an einem Tag.', test: () => Object.values(tagesCache().essen).some(l => new Set(l.filter(e => (food(e.foodId) || {}).cat === 'gesund').map(e => e.foodId)).size >= 5) },
+  { id: 'perfekt', em: '🥇', name: 'Perfekter Tag', text: 'Ein Tag mit mind. 3 Portionen, alle gesund.', test: () => tageMitDaten().some(d => { const s = statistik(d, d); return s.total >= 3 && s.gesund === s.total; }) },
+  { id: 'vegan', em: '🌱', name: 'Pflanzen-Power', text: 'Ein Tag mit mind. 3 Portionen, alle vegan.', test: () => tageMitDaten().some(d => { const s = statistik(d, d); return s.total >= 3 && s.vegan === s.total; }) },
+  { id: 'gruenwoche', em: '🍀', name: 'Grüne Woche', text: 'Eine Woche mit mind. 70 % gesund (ab 10 Portionen).', test: () => [...new Set(tageMitDaten().map(d => zeitraum(d, 'woche')[0]))].some(v => { const s = statistik(v, zeitraum(v, 'woche')[1]); return s.total >= 10 && s.pGesund >= 70; }) },
+  { id: 'willen', em: '🦁', name: 'Willensstark', text: '7 Tage in Folge mit Einträgen, ganz ohne Ungesundes.', test: () => tageMitDaten().some(d => { for (let i = 0, x = ausIso(d); i < 7; i++, x.setDate(x.getDate() - 1)) { const s = statistik(iso(x), iso(x)); if (!s.total || s.ungesund) return false; } return true; }) },
+  // Serien
+  { id: 'serie3', em: '🔥', name: 'Im Flow', text: '3 Tage in Folge mind. 50 % gesund.', test: () => tageMitDaten().some(d => serieBis(d) >= 3) },
+  { id: 'serie7', em: '🏆', name: 'Wochen-Champion', text: '7 Tage in Folge mind. 50 % gesund.', test: () => tageMitDaten().some(d => serieBis(d) >= 7) },
+  { id: 'serie14', em: '🚀', name: 'Unaufhaltsam', text: '14 Tage in Folge mind. 50 % gesund.', test: () => tageMitDaten().some(d => serieBis(d) >= 14) },
+  // Bewegung
+  { id: 'vollgas', em: '⚡', name: 'Vollgas', text: '30 Min. intensive Bewegung an einem Tag.', test: () => tageMitDaten().some(d => bewStat(d, d).intensiv >= 30) },
+  { id: 'zen', em: '🧘', name: 'Zen-Moment', text: 'Eine leichte Einheit von mind. 20 Min. (z. B. Yoga).', test: () => daten.moves.some(m => m.minutes >= 20 && (akt(m.actId) || {}).intensity === 'leicht') },
+  { id: 'woche150', em: '💪', name: 'Bewegungs-Profi', text: '150 Min. Bewegung in einer Woche.', test: () => [...new Set(daten.moves.map(m => zeitraum(m.date, 'woche')[0]))].some(v => bewStat(v, zeitraum(v, 'woche')[1]).total >= 150) },
+  { id: 'allrounder', em: '🎨', name: 'Allrounder', text: '5 verschiedene Aktivitäten ausprobiert.', test: () => new Set(daten.moves.map(m => m.actId)).size >= 5 },
+  // Schritte
+  { id: 'schritte', em: '👟', name: 'Zehntausender', text: 'Mind. 10 000 Schritte an einem Tag.', test: () => Object.values(daten.steps).some(v => v >= 10000) },
+  { id: 'gipfel', em: '🏔️', name: 'Gipfelstürmer', text: 'Mind. 20 000 Schritte an einem Tag.', test: () => Object.values(daten.steps).some(v => v >= 20000) },
+  // Gesamt
+  { id: 'ringe', em: '💫', name: 'Alle Ringe zu!', text: 'Essen, Bewegung und Schritte an einem Tag erreicht.', test: () => tageMitDaten().some(d => ringWerte(d).alleZu) },
+  { id: 'ziel', em: '🎯', name: 'Volltreffer', text: 'Ein eigenes Ziel erreicht.', test: () => daten.goals.some(z => bewerte(z).klasse === 'st-ok') },
+  { id: 'fleiss', em: '⭐', name: 'Dranbleiber', text: '50 Einträge im Tagebuch.', test: () => daten.entries.length >= 50 },
+  { id: 'sicher', em: '🛡️', name: 'Sicher ist sicher', text: 'Erste Datensicherung exportiert.', test: () => !!daten.letzteSicherung }
+];
+function tageMitDaten() {
+  return [...new Set([...daten.entries.map(e => e.date), ...daten.moves.map(m => m.date), ...Object.keys(daten.steps)])];
+}
+let abzeichenBereit = false, warteschlange = [];
+function naechstesAbzeichen() { const a = warteschlange.shift(); if (a) zeigeAbzeichen(a); }
+function schliesseModal() { document.getElementById('modal').classList.add('versteckt'); setTimeout(naechstesAbzeichen, 250); }
+function pruefeAbzeichen() {
+  daten.badges = daten.badges || {};
+  const neu = ABZEICHEN.filter(a => !daten.badges[a.id] && a.test());
+  neu.forEach(a => daten.badges[a.id] = iso(new Date()));
+  if (neu.length) localStorage.setItem(SPEICHER, JSON.stringify(daten));
+  if (neu.length && abzeichenBereit) { warteschlange.push(...neu); if (document.getElementById('modal').classList.contains('versteckt')) naechstesAbzeichen(); }   // beim ersten Laden still freischalten
+  abzeichenBereit = true;
+  const frei = ABZEICHEN.filter(a => daten.badges[a.id]).length;
+  document.getElementById('badgeZahl').textContent = `(${frei} von ${ABZEICHEN.length})`;
+  document.getElementById('badges').innerHTML = ABZEICHEN.map(a => `<div class="badge ${daten.badges[a.id] ? 'frei' : ''}" title="${a.text}${daten.badges[a.id] ? ' – freigeschaltet am ' + schoen(daten.badges[a.id]) : ''}">
+    <span class="em">${a.em}</span>${a.name}</div>`).join('');
+}
+function zeigeAbzeichen(a) {
+  document.getElementById('modalEmoji').textContent = a.em;
+  document.getElementById('modalName').textContent = a.name;
+  document.getElementById('modalText').textContent = a.text;
+  document.getElementById('modal').classList.remove('versteckt');
+  feiern('');
+}
+
+function alles() { zeigeSicherung(); zeigeGruss(); zeichneRinge(); pruefeAbzeichen(); pruefeZiele(); zeichneKalender(); zeichneTag(); zeichneWoche(); zeichneFoods(); zeichneBewegung(); zeichneVorschlaege(); zeichneZiele(); zeichneAuswertung(); zeichneBewAuswertung(); zeichneTipps(); }
+
+/* ================================================================
+   E) AKTIONEN (Knöpfe)
+   ================================================================ */
+document.getElementById('foodAdd').onclick = () => {
+  const name = document.getElementById('foodName').value.trim();
+  if (!name) return alert('Bitte einen Namen eingeben.');
+  daten.foods.push({ id: neueId(), name, cat: document.getElementById('foodCat').value, vegan: document.getElementById('foodVegan').checked });
+  document.getElementById('foodName').value = ''; document.getElementById('foodVegan').checked = false;
+  speichern(); alles();
+};
+function loescheFood(id) {
+  if (daten.entries.some(e => e.foodId === id) && !confirm('Dieses Lebensmittel ist im Tagebuch eingetragen. Trotzdem löschen?')) return;
+  daten.foods = daten.foods.filter(f => f.id !== id); speichern(); alles();
+}
+/* Name aus dem Textfeld suchen (Gross-/Kleinschreibung egal) */
+const findeName = (liste, name) => liste.find(x => x.name.toLowerCase() === name.trim().toLowerCase());
+
+document.getElementById('eintragAdd').onclick = () => {
+  const feld = document.getElementById('eintragFood'), name = feld.value.trim();
+  if (!name) return alert('Bitte ein Lebensmittel eingeben oder auswählen.');
+  let f = findeName(daten.foods, name);
+  if (!f) {   // unbekannt → direkt neu anlegen
+    const k = prompt(`«${name}» ist neu. Kategorie? g = gesund, m = neutral/mittel, u = ungesund`, 'm');
+    if (k === null) return;
+    const cat = { g: 'gesund', m: 'mittel', u: 'ungesund' }[k.trim().toLowerCase()[0]] || 'mittel';
+    f = { id: neueId(), name, cat, vegan: confirm(`Ist «${name}» vegan?`) };
+    daten.foods.push(f);
+  }
+  const portions = Math.max(1, Number(document.getElementById('eintragPortion').value) || 1);
+  daten.entries.push({ id: neueId(), date: gewaehlt, foodId: f.id, portions });
+  feld.value = ''; document.getElementById('eintragPortion').value = 1; speichern(); alles(); feld.focus();
+};
+document.getElementById('eintragFood').onkeydown = e => { if (e.key === 'Enter') document.getElementById('eintragAdd').click(); };
+function loescheEintrag(id) { daten.entries = daten.entries.filter(e => e.id !== id); speichern(); alles(); }
+document.getElementById('zielAdd').onclick = () => {
+  const value = Number(document.getElementById('zielWert').value);
+  const istBew = ['bewegung', 'schritte'].includes(document.getElementById('zielMetrik').value);
+  if (isNaN(value) || value < 0 || (!istBew && value > 100)) return alert(istBew ? 'Bitte Minuten eingeben.' : 'Zielwert zwischen 0 und 100 eingeben.');
+  daten.goals.push({ id: neueId(), metric: document.getElementById('zielMetrik').value, cmp: document.getElementById('zielVergleich').value,
+    value, period: document.getElementById('zielZeitraum').value });
+  speichern(); alles();
+};
+function loescheZiel(id) { daten.goals = daten.goals.filter(z => z.id !== id); speichern(); alles(); }
+document.getElementById('monatZurueck').onclick = () => { kalMonat = new Date(kalMonat.getFullYear(), kalMonat.getMonth() - 1, 1); zeichneKalender(); };
+document.getElementById('monatVor').onclick = () => { kalMonat = new Date(kalMonat.getFullYear(), kalMonat.getMonth() + 1, 1); zeichneKalender(); };
+document.getElementById('auswZeitraum').onchange = () => { zeichneAuswertung(); zeichneBewAuswertung(); };
+
+/* Bewegung: Aktionen */
+document.getElementById('bewAdd').onclick = () => {
+  const feld = document.getElementById('bewAkt'), name = feld.value.trim();
+  const minutes = Math.round(Number(document.getElementById('bewMin').value));
+  if (!name) return alert('Bitte eine Aktivität eingeben oder auswählen.');
+  if (!(minutes > 0)) return alert('Bitte Minuten eingeben.');
+  let a = findeName(daten.activities, name);
+  if (!a) {   // unbekannt → direkt neu anlegen
+    const k = prompt(`«${name}» ist neu. Intensität? l = leicht, m = mittel, i = intensiv`, 'm');
+    if (k === null) return;
+    a = { id: neueId(), name, intensity: { l: 'leicht', m: 'mittel', i: 'intensiv' }[k.trim().toLowerCase()[0]] || 'mittel' };
+    daten.activities.push(a);
+  }
+  daten.moves.push({ id: neueId(), date: gewaehlt, actId: a.id, minutes });
+  feld.value = ''; speichern(); alles(); feld.focus();
+};
+document.getElementById('bewAkt').onkeydown = e => { if (e.key === 'Enter') document.getElementById('bewAdd').click(); };
+function loescheBew(id) { daten.moves = daten.moves.filter(m => m.id !== id); speichern(); alles(); }
+document.getElementById('aktAdd').onclick = () => {
+  const name = document.getElementById('aktName').value.trim();
+  if (!name) return alert('Bitte einen Namen eingeben.');
+  daten.activities.push({ id: neueId(), name, intensity: document.getElementById('aktInt').value });
+  document.getElementById('aktName').value = ''; speichern(); alles();
+};
+function loescheAkt(id) {
+  if (daten.moves.some(m => m.actId === id) && !confirm('Diese Aktivität ist eingetragen. Trotzdem löschen?')) return;
+  daten.activities = daten.activities.filter(a => a.id !== id); speichern(); alles();
+}
+document.getElementById('neueVorschlaege').onclick = () => { vorschlagStart += 3; zeichneVorschlaege(); };
+document.getElementById('schritteSave').onclick = () => {
+  const n = Math.round(Number(document.getElementById('schritte').value));
+  if (!(n >= 0)) return alert('Bitte eine Zahl eingeben.');
+  if (n === 0) delete daten.steps[gewaehlt]; else daten.steps[gewaehlt] = n;
+  speichern(); alles();
+};
+document.getElementById('schritte').onkeydown = e => { if (e.key === 'Enter') document.getElementById('schritteSave').click(); };
+/* ================================================================
+   SCHRITTE AUS CSV IMPORTIEREN (Samsung Health, Health Connect-Export-Apps, Google Sheets …)
+   ================================================================ */
+let impDaten = null;   // { kopf:[…], zeilen:[[…]] }
+function csvZerlegen(text) {
+  const roh = text.replace(/^﻿/, '').split(/\r?\n/).filter(z => z.trim());
+  const trenner = [';', ',', '\t'].sort((a, b) => roh.slice(0, 5).join('').split(b).length - roh.slice(0, 5).join('').split(a).length)[0];
+  const zelle = z => { const out = []; let cur = '', q = false;
+    for (const c of z) { if (c === '"') q = !q; else if (c === trenner && !q) { out.push(cur.trim()); cur = ''; } else cur += c; }
+    out.push(cur.trim()); return out; };
+  const zeilen = roh.map(zelle);
+  // Kopfzeile = erste Zeile mit einer Spalte, die nach Schritten aussieht (Samsung hat davor eine Info-Zeile)
+  let k = zeilen.findIndex(z => z.length > 1 && z.some(c => /^(steps?|schritte|count|step_count|anzahl)$/i.test(c)));
+  if (k < 0) k = zeilen.findIndex(z => z.length > 2 && z.some(c => /step|schritt/i.test(c)) && !z.some(c => /^com\./.test(c)));
+  if (k < 0) k = 0;
+  return { kopf: zeilen[k], zeilen: zeilen.slice(k + 1).filter(z => z.length >= 2) };
+}
+function datumLesen(w) {
+  if (!w) return null;
+  w = w.trim();
+  if (/^\d{12,13}$/.test(w)) return iso(new Date(Number(w)));          // Millisekunden (z. B. Samsung day_time)
+  if (/^\d{9,10}$/.test(w)) return iso(new Date(Number(w) * 1000));    // Sekunden
+  let m = w.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);                     // 2026-11-24 …
+  if (m) return gueltig(`${m[1]}-${pad(m[2])}-${pad(m[3])}`);
+  m = w.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);                // 24.11.2026, 24/11/2026 oder US 11/24/2026
+  if (m) {
+    let t = Number(m[1]), mo = Number(m[2]); const j = m[3].length === 2 ? '20' + m[3] : m[3];
+    if (mo > 12 && t <= 12) [t, mo] = [mo, t];                        // amerikanisch: Monat/Tag/Jahr
+    return gueltig(`${j}-${pad(mo)}-${pad(t)}`);
+  }
+  const d = new Date(w); return isNaN(d) ? null : iso(d);
+}
+function gueltig(dIso) {   // nur echte Kalendertage zulassen (kein 31.02.)
+  const [y, mo, t] = dIso.split('-').map(Number), d = new Date(y, mo - 1, t);
+  return d.getFullYear() === y && d.getMonth() === mo - 1 && d.getDate() === t ? dIso : null;
+}
+function zahlLesen(w) { const n = Number(String(w).replace(/['’\s]/g, '').replace(/,(?=\d{3}\b)/g, '')); return isNaN(n) ? null : n; }
+function impBerechnen() {
+  const di = Number(document.getElementById('impDatum').value), si = Number(document.getElementById('impSchritte').value);
+  const modus = document.getElementById('impModus').value, tage = {};
+  let fehler = 0;
+  impDaten.zeilen.forEach(z => {
+    const d = datumLesen(z[di]), n = zahlLesen(z[si]);
+    if (!d || n === null || n < 0) { fehler++; return; }
+    tage[d] = modus === 'max' ? Math.max(tage[d] || 0, n) : (tage[d] || 0) + n;
+  });
+  return { tage, fehler };
+}
+function impVorschau() {
+  const { tage, fehler } = impBerechnen(), liste = Object.keys(tage).sort();
+  const el = document.getElementById('impVorschau');
+  if (!liste.length) { el.innerHTML = 'Keine gültigen Daten gefunden – bitte andere Spalten wählen.'; return; }
+  const letzte = liste.slice(-5).map(d => `${schoen(d)}: <strong>${tsd(Math.round(tage[d]))}</strong>`).join('<br>');
+  el.innerHTML = `${liste.length} Tage gefunden (${schoen(liste[0])} bis ${schoen(liste[liste.length - 1])})${fehler ? `, ${fehler} Zeilen übersprungen` : ''}.<br>Letzte Tage:<br>${letzte}<br>`
+    + `Bestehende Werte an diesen Tagen werden überschrieben. Wirken die Zahlen doppelt so hoch wie auf der Uhr? → «höchsten Wert nehmen» wählen.`;
+}
+document.getElementById('schrittImport').onchange = ev => {
+  const datei = ev.target.files[0]; if (!datei) return;
+  datei.text().then(t => {
+    impDaten = csvZerlegen(t);
+    if (!impDaten.zeilen.length) return alert('In der Datei wurden keine Datenzeilen gefunden.');
+    const opt = impDaten.kopf.map((h, i) => `<option value="${i}">${esc(h) || 'Spalte ' + (i + 1)}</option>`).join('');
+    const dSel = document.getElementById('impDatum'), sSel = document.getElementById('impSchritte');
+    dSel.innerHTML = opt; sSel.innerHTML = opt;
+    const finde = re => impDaten.kopf.findIndex(h => re.test(h));
+    let di = finde(/^(day_time|date|datum|day|tag)$/i); if (di < 0) di = finde(/date|datum|day|time|start|zeit/i);
+    let si = finde(/^(steps?|schritte|count|step_count)$/i); if (si < 0) si = finde(/step|schritt|count|anzahl/i);
+    dSel.value = Math.max(0, di); sSel.value = Math.max(0, si === di ? 1 : si);
+    // Samsung-Tagesdatei enthält pro Tag mehrere Quellen (Uhr, Handy, kombiniert) → Höchstwert
+    document.getElementById('impModus').value = /daily_trend|samsung/i.test(datei.name + impDaten.kopf.join()) ? 'max' : 'summe';
+    document.getElementById('importPanel').classList.remove('versteckt');
+    impVorschau();
+  });
+  ev.target.value = '';
+};
+['impDatum', 'impSchritte', 'impModus'].forEach(id => document.getElementById(id).onchange = impVorschau);
+document.getElementById('impAbbruch').onclick = () => document.getElementById('importPanel').classList.add('versteckt');
+document.getElementById('impOk').onclick = () => {
+  const { tage } = impBerechnen(), n = Object.keys(tage).length;
+  if (!n) return alert('Nichts zu importieren.');
+  Object.entries(tage).forEach(([d, v]) => { if (v > 0) daten.steps[d] = Math.round(v); });
+  speichern(); document.getElementById('importPanel').classList.add('versteckt'); alles();
+  alert(`${n} Tage mit Schritten importiert.`);
+};
+
+['foodSuche', 'foodFilter'].forEach(id => document.getElementById(id).oninput = zeichneFoods);
+['aktSuche', 'aktFilter'].forEach(id => document.getElementById(id).oninput = zeichneAktKacheln);
+document.getElementById('foodName').onkeydown = e => { if (e.key === 'Enter') document.getElementById('foodAdd').click(); };
+document.getElementById('aktName').onkeydown = e => { if (e.key === 'Enter') document.getElementById('aktAdd').click(); };
+/* Ziel-Einheit umschalten (% oder Minuten) */
+document.getElementById('zielMetrik').onchange = e => {
+  const m = e.target.value;
+  document.getElementById('zielEinheit').textContent = { bewegung: 'Minuten', schritte: 'Schritte' }[m] || '%';
+  document.getElementById('zielWert').value = { bewegung: 150, schritte: 10000 }[m] || 60;
+  if (m === 'schritte') document.getElementById('zielZeitraum').value = 'woche';
+};
+
+/* Datensicherung */
+document.getElementById('exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify(daten, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'wottsch-grad-eis-sicherung-' + iso(new Date()) + '.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  daten.letzteSicherung = iso(new Date()); speichern(); alles();
+};
+document.getElementById('importFile').onchange = ev => {
+  const datei = ev.target.files[0]; if (!datei) return;
+  datei.text().then(t => {
+    try {
+      const d = JSON.parse(t); if (!Array.isArray(d.foods) || !Array.isArray(d.entries)) throw 0;
+      daten = { goals: [], activities: [], moves: [], steps: {}, badges: {}, ...d };
+      ['goals', 'activities', 'moves'].forEach(k => { if (!Array.isArray(daten[k])) daten[k] = []; });
+      if (typeof daten.steps !== 'object' || !daten.steps) daten.steps = {};
+      // Werte bereinigen, falls die Datei von Hand bearbeitet wurde
+      daten.foods.forEach(f => { if (!['gesund', 'mittel', 'ungesund'].includes(f.cat)) f.cat = 'mittel'; f.vegan = !!f.vegan; });
+      daten.activities.forEach(a => { if (!['leicht', 'mittel', 'intensiv'].includes(a.intensity)) a.intensity = 'mittel'; });
+      abzeichenBereit = false; erreichtVorher = null;          // keine Popups/Konfetti für importierte Erfolge
+      ergaenzeStartlisten(); speichern(); alles(); alert('Import erfolgreich.');
+    }
+    catch { alert('Die Datei ist keine gültige Sicherung.'); }
+  });
+};
+
+document.getElementById('modal').onclick = e => { if (e.target.id === 'modal') schliesseModal(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('modal').classList.contains('versteckt')) schliesseModal(); });
+
+/* Neuer Tag, während die App offen war (z. B. über Nacht im Hintergrund) → auf heute springen */
+let heuteBeimStart = iso(new Date());
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  const h = iso(new Date());
+  if (h !== heuteBeimStart) { if (gewaehlt === heuteBeimStart) { gewaehlt = h; kalMonat = new Date(); } heuteBeimStart = h; alles(); }
+});
+
+/* Reiter-Navigation */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('aktiv', x === b));
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('versteckt', s.id !== b.dataset.seite));
+  alles();
+});
+
+alles();
+</script>
+</body>
+</html>
