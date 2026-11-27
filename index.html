@@ -192,6 +192,34 @@
   .modal-name{position:relative;font-size:24px;font-weight:800;color:var(--petrol);margin:4px 0}
   .modal-text{position:relative;color:var(--text);margin-bottom:18px}
   .modal .btn{position:relative}
+  /* Mengen direkt in der Liste ändern */
+  .liste li.eintrag{display:grid;grid-template-columns:12px 1fr auto;align-items:center;column-gap:10px;row-gap:6px}
+  .eintrag > .punkt{grid-column:1;grid-row:1}
+  .eintrag > .grow{grid-column:2;grid-row:1;min-width:0}
+  .eintrag > .klein{grid-column:3;grid-row:1}
+  .eintrag > .menge{grid-column:2 / 4;grid-row:2;justify-self:start}
+  .eintrag .sub{font-size:12px;color:var(--muted)}
+  .menge{display:inline-flex;align-items:center;gap:4px;background:#f1f8f9;border-radius:999px;padding:3px}
+  .menge button{width:30px;height:30px;border-radius:50%;border:0;background:#fff;color:var(--petrol);font:800 17px/1 inherit;font-family:inherit;
+                cursor:pointer;box-shadow:0 1px 3px rgba(14,107,120,.18)}
+  .menge button:active{transform:scale(.92)}
+  .menge input{width:50px;text-align:center;border:0;background:transparent;font-weight:800;padding:2px;-moz-appearance:textfield}
+  .menge input::-webkit-inner-spin-button{display:none}
+  .menge .einh{font-size:12px;color:var(--muted);padding-right:6px;white-space:nowrap}
+  .blink{animation:blink .9s ease-out}
+  @keyframes blink{0%{background:#fff1d1}100%{background:transparent}}
+  /* Formular-Dialog (Lebensmittel / Aktivität bearbeiten) */
+  .modal.formular{text-align:left;padding:22px 20px 18px;width:min(400px,92vw)}
+  .formular .modal-name{font-size:21px;margin:2px 0 14px}
+  .feld{margin-bottom:12px} .feld > label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px}
+  .feld input[type=text],.feld select{width:100%}
+  .wahl{display:flex;gap:6px;flex-wrap:wrap}
+  .wahl button{flex:1 1 auto;border:2px solid transparent;border-radius:12px;padding:8px 6px;font:700 13px/1.2 inherit;font-family:inherit;cursor:pointer;background:#f1f6f7;color:var(--text)}
+  .wahl button.an{border-color:var(--petrol);box-shadow:0 2px 8px rgba(14,107,120,.2)}
+  .wahl .w-gesund{background:#dbf8ea} .wahl .w-mittel{background:#fff1d1} .wahl .w-ungesund{background:#ffe1e8}
+  .wahl .w-leicht{background:#e6f8fe} .wahl .w-mittelint{background:#bdeefc} .wahl .w-intensiv{background:#cfe9ec}
+  .gr-hilfe{font-size:12px;color:var(--muted);margin-top:4px}
+  .form-knoepfe{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
   /* Versionshinweis oben rechts + Release Notes */
   .version{position:absolute!important;top:14px;right:14px;z-index:2;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.16);
            color:#fff;font:700 12px/1 inherit;font-family:inherit;padding:6px 10px;border-radius:999px;cursor:pointer;backdrop-filter:blur(4px)}
@@ -276,7 +304,8 @@
       <div class="zeile">
         <input id="eintragFood" class="grow" list="foodVorschlag" placeholder="Lebensmittel tippen oder auswählen …" autocomplete="off">
         <datalist id="foodVorschlag"></datalist>
-        <input id="eintragPortion" type="number" min="1" value="1" style="width:70px" title="Portionen">
+        <input id="eintragPortion" type="number" min="0.5" step="0.5" value="1" style="width:70px" title="Menge">
+        <span class="muted" id="eintragEinheit" style="min-width:60px">Portion</span>
         <button class="btn" id="eintragAdd">Eintragen</button>
       </div>
       <ul class="liste" id="tagesListe"></ul>
@@ -420,6 +449,8 @@
             <option value="ungesund">ungesund</option>
           </select>
           <label><input type="checkbox" id="foodVegan"> vegan</label>
+          <input id="foodEinheit" list="einheitListe" placeholder="Einheit (z. B. Scheibe)" style="flex:1 1 120px">
+          <select id="foodGr" title="Portionsgrösse"></select>
           <button class="btn" id="foodAdd">+</button>
         </div>
         <div class="zeile">
@@ -454,6 +485,10 @@
     <p class="muted">Tipp: Auf eine Kachel tippen, um sie zu bearbeiten.</p>
   </section>
 </main>
+<datalist id="einheitListe"></datalist>
+<div class="modal-bg versteckt" id="formModal">
+  <div class="modal formular" id="formInhalt"></div>
+</div>
 <div class="modal-bg versteckt" id="notesModal">
   <div class="modal notes">
     <div class="notes-kopf"><div><div class="modal-klein">Release Notes</div><div class="modal-name">Was ist neu?</div></div>
@@ -551,6 +586,58 @@ const VORSCHLAEGE = [
   { akt: 'Schwimmen', min: 30, text: '30 Min. schwimmen' },
   { akt: 'Yoga', min: 20, text: '20 Min. Yoga zum Tagesstart' }
 ];
+/* ===== Portionsgrössen =====
+   Jedes Lebensmittel hat eine Einheit (z. B. «Scheibe») und eine Portionsgrösse.
+   Die Grösse sagt, wie stark 1 Einheit zählt: 1 = eine normale Portion (z. B. 1 Apfel, 1 Teller Gemüse).
+   So zählt 1 Scheibe Käse (½) weniger als 1 Portion Pommes (1½). */
+const GROESSEN = [
+  { w: 0.25, name: 'sehr klein', bsp: '1 Tasse Kaffee, 1 EL Öl, 1 Guetzli' },
+  { w: 0.5, name: 'klein', bsp: '1 Scheibe Käse/Brot, 1 Ei, 1 Handvoll Nüsse' },
+  { w: 1, name: 'normal', bsp: '1 Apfel, 1 Teller Gemüse, 1 Becher Joghurt' },
+  { w: 1.5, name: 'gross', bsp: '1 Portion Pommes, 1 Bratwurst, 1 Rösti' },
+  { w: 2, name: 'sehr gross', bsp: '1 Pizza, 1 Kebab, 1 Hamburger' }
+];
+const BRUCH = w => ({ 0.25: '¼', 0.5: '½', 0.75: '¾', 1: '1', 1.5: '1½', 2: '2' }[w] || String(w).replace('.', ','));
+const EINHEITEN = ['Portion', 'Stück', 'Scheibe', 'Handvoll', 'Glas', 'Tasse', 'Becher', 'Schale', 'Kugel', 'EL', 'TL', 'Reihe', 'Dose', 'Zehe', 'Stange', 'Schnitz'];
+const MEHRZAHL = { Portion: 'Portionen', Scheibe: 'Scheiben', Tasse: 'Tassen', Schale: 'Schalen', Kugel: 'Kugeln', Reihe: 'Reihen', Dose: 'Dosen', Zehe: 'Zehen', Stange: 'Stangen', Glas: 'Gläser', Schnitz: 'Schnitze' };
+const einheitText = (n, e) => `${zahl(n)} ${n === 1 ? e : (MEHRZAHL[e] || e)}`;
+const zahl = n => Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toString().replace('.', ',');
+/* Vorschlag pro Startlebensmittel: [Einheit, Grösse] */
+const PORTIONEN = {
+  'apfel': ['Stück', 1], 'banane': ['Stück', 1], 'birne': ['Stück', 1], 'orange': ['Stück', 1], 'mandarine': ['Stück', 0.5], 'kiwi': ['Stück', 0.5],
+  'erdbeeren': ['Handvoll', 0.5], 'heidelbeeren': ['Handvoll', 0.5], 'trauben': ['Handvoll', 0.5], 'ananas': ['Scheibe', 0.5],
+  'wassermelone': ['Schnitz', 1], 'mango': ['Stück', 1],
+  'karotte': ['Stück', 0.5], 'brokkoli': ['Portion', 1], 'blumenkohl': ['Portion', 1], 'spinat': ['Portion', 1], 'kopfsalat': ['Schale', 1],
+  'gurke': ['Stück', 1], 'tomate': ['Stück', 0.5], 'peperoni': ['Stück', 1], 'zucchetti': ['Portion', 1], 'aubergine': ['Portion', 1],
+  'zwiebel': ['Stück', 0.5], 'knoblauch': ['Zehe', 0.25], 'lauch': ['Portion', 1], 'kohlrabi': ['Portion', 1], 'fenchel': ['Portion', 1],
+  'randen': ['Portion', 1], 'erbsen': ['Portion', 1], 'grüne bohnen': ['Portion', 1], 'champignons': ['Portion', 1],
+  'süsskartoffel': ['Stück', 1], 'kartoffeln (gekocht)': ['Portion', 1],
+  'linsen': ['Portion', 1], 'kichererbsen': ['Portion', 1], 'kidneybohnen': ['Portion', 1], 'tofu': ['Portion', 1], 'haferflocken': ['Portion', 1],
+  'vollkornbrot': ['Scheibe', 0.5], 'vollkornreis': ['Portion', 1], 'quinoa': ['Portion', 1], 'vollkornteigwaren': ['Portion', 1],
+  'baumnüsse': ['Handvoll', 0.5], 'mandeln': ['Handvoll', 0.5], 'leinsamen': ['EL', 0.25], 'avocado': ['Stück', 1],
+  'lachs': ['Portion', 1], 'forelle': ['Portion', 1], 'ei': ['Stück', 0.5], 'naturjoghurt': ['Becher', 1], 'hüttenkäse': ['Portion', 1],
+  'pouletbrust': ['Portion', 1], 'magerquark': ['Portion', 1], 'wasser': ['Glas', 0.25], 'tee ungesüsst': ['Tasse', 0.25],
+  'weissbrot': ['Scheibe', 0.5], 'teigwaren': ['Portion', 1], 'weisser reis': ['Portion', 1], 'couscous': ['Portion', 1],
+  'hartkäse': ['Scheibe', 0.5], 'mozzarella': ['Kugel', 1], 'milch': ['Glas', 0.5], 'butter': ['Portion', 0.25], 'rindfleisch': ['Portion', 1],
+  'schweinefleisch': ['Portion', 1], 'kochschinken': ['Scheibe', 0.5], 'fruchtjoghurt': ['Becher', 1], 'orangensaft': ['Glas', 0.5],
+  'pizza margherita': ['Stück', 2], 'rösti': ['Portion', 1.5], 'hummus': ['Portion', 0.5], 'erdnussbutter': ['EL', 0.5],
+  'dunkle schokolade': ['Reihe', 0.5], 'honig': ['TL', 0.25], 'konfitüre': ['TL', 0.25], 'kaffee': ['Tasse', 0.25], 'haferdrink': ['Glas', 0.5],
+  'datteln': ['Stück', 0.25], 'gipfeli': ['Stück', 1], 'sushi': ['Stück', 0.25], 'thunfisch (dose)': ['Dose', 1], 'olivenöl': ['EL', 0.25],
+  'milchschokolade': ['Reihe', 0.5], 'chips': ['Handvoll', 0.5], 'pommes frites': ['Portion', 1.5], 'cervelat': ['Stück', 1.5],
+  'salami': ['Scheibe', 0.25], 'bratwurst': ['Stück', 1.5], 'hamburger': ['Stück', 2], 'glace': ['Kugel', 0.5], 'gummibärchen': ['Handvoll', 0.5],
+  'cola / süssgetränk': ['Glas', 1], 'energy drink': ['Dose', 1], 'kuchen': ['Stück', 1], 'guetzli': ['Stück', 0.25], 'berliner': ['Stück', 1],
+  'chicken nuggets': ['Stück', 0.25], 'kebab': ['Stück', 2], 'mayonnaise': ['EL', 0.5], 'bier': ['Stange', 1]
+};
+function ergaenzePortionen() {   // fehlende Einheit/Grösse ergänzen (Startliste: Vorschlag, eigene: 1 Portion)
+  let geaendert = false;
+  daten.foods.forEach(f => {
+    if (f.einheit && f.gewicht) return;
+    const v = PORTIONEN[f.name.toLowerCase()] || ['Portion', 1];
+    f.einheit = f.einheit || v[0]; f.gewicht = f.gewicht || v[1]; geaendert = true;
+  });
+  return geaendert;
+}
+
 /* Startlisten einmalig ergänzen (auch bei bestehenden Daten und nach einem Import).
    Bereits vorhandene Namen werden nicht doppelt angelegt. */
 function ergaenzeStartlisten() {
@@ -575,6 +662,7 @@ if (!daten.aktGeladen) {                    // Startliste einmalig ergänzen, oh
   daten.aktGeladen = true;
   speichern();
 }
+  if (ergaenzePortionen()) speichern();
 }
 ergaenzeStartlisten();
 
@@ -616,8 +704,9 @@ function statistik(von, bis) {
   const liste = von === bis ? (tagesCache().essen[von] || []) : daten.entries.filter(e => e.date >= von && e.date <= bis);
   liste.forEach(e => {
     const f = food(e.foodId); if (!f) return;
-    s[f.cat] += e.portions; s.total += e.portions;
-    if (f.vegan) s.vegan += e.portions;
+    const w = e.portions * (f.gewicht || 1);          // Menge × Portionsgrösse = gewichtete Portionen
+    s[f.cat] += w; s.total += w;
+    if (f.vegan) s.vegan += w;
   });
   const p = k => s.total ? Math.round(s[k] / s.total * 100) : 0;
   return { ...s, pGesund: p('gesund'), pMittel: p('mittel'), pUngesund: p('ungesund'), pVegan: p('vegan') };
@@ -708,10 +797,15 @@ function zeichneTag() {
     .map(f => `<option value="${esc(f.name)}">${katText[f.cat]}${f.vegan ? ' · vegan' : ''}</option>`).join('');
   const liste = daten.entries.filter(e => e.date === gewaehlt);
   document.getElementById('tagesListe').innerHTML = liste.map(e => {
-    const f = food(e.foodId) || { name: '(gelöscht)', cat: 'mittel' };
-    return `<li><span class="punkt ${f.cat}"></span><span class="grow">${e.portions} × ${esc(f.name)}</span>
-      ${f.vegan ? '<span class="vegan-tag">vegan</span>' : ''}
-      <button class="klein" onclick="loescheEintrag(${e.id})">✕</button></li>`;
+    const f = food(e.foodId) || { name: '(gelöscht)', cat: 'mittel', einheit: 'Portion', gewicht: 1 };
+    return `<li class="eintrag" id="e${e.id}"><span class="punkt ${f.cat}"></span>
+      <span class="grow">${esc(f.name)}${f.vegan ? ' <span class="vegan-tag">vegan</span>' : ''}
+        <span class="sub">· ${zahl(e.portions * (f.gewicht || 1))} Port.</span></span>
+      <span class="menge"><button onclick="aendereMenge(${e.id}, -1)" title="weniger">−</button>
+        <input type="number" min="0" step="0.5" value="${e.portions}" onchange="setzeMenge(${e.id}, this.value)" aria-label="Menge">
+        <span class="einh">${esc(e.portions === 1 ? f.einheit : (MEHRZAHL[f.einheit] || f.einheit))}</span>
+        <button onclick="aendereMenge(${e.id}, 1)" title="mehr">+</button></span>
+      <button class="klein" onclick="loescheEintrag(${e.id})" title="Löschen">✕</button></li>`;
   }).join('') || '<li class="muted">Noch nichts eingetragen.</li>';
   const st = statistik(gewaehlt, gewaehlt);
   document.getElementById('tagesBalken').innerHTML = balken(st) +
@@ -742,17 +836,70 @@ function zeichneFoods() {
       <button class="x" onclick="event.stopPropagation(); loescheFood(${f.id})" title="Löschen">✕</button>
       <span class="nm">${esc(f.name)}</span>
       <span class="info"><span class="punkt ${f.cat}" style="width:8px;height:8px"></span>${namen[f.cat]}${f.vegan ? '<span class="vg">vegan</span>' : ''}</span>
+      <span class="info">1 ${esc(f.einheit)} = ${BRUCH(f.gewicht)} Port.</span>
     </div>`).join('') || '<span class="muted">Keine Treffer.</span>';
 }
 function bearbeiteFood(id) {
   const f = food(id); if (!f) return;
-  const name = prompt('Name:', f.name); if (name === null) return;
-  const k = prompt('Kategorie: g = gesund, m = mittel, u = ungesund', f.cat[0]); if (k === null) return;
-  f.name = name.trim() || f.name;
-  f.cat = { g: 'gesund', m: 'mittel', u: 'ungesund' }[k.trim().toLowerCase()[0]] || f.cat;
-  f.vegan = confirm(`Ist «${f.name}» vegan?`);
-  speichern(); alles();
+  oeffneFoodForm(f, neu => { Object.assign(f, neu, { id: f.id }); speichern(); alles(); }, false);
 }
+/* Formular-Dialog: Lebensmittel anlegen/bearbeiten */
+function oeffneFoodForm(f, beiSpeichern, istNeu) {
+  const box = document.getElementById('formInhalt');
+  box.innerHTML = `
+    <div class="modal-klein">${istNeu ? 'Neues Lebensmittel' : 'Lebensmittel bearbeiten'}</div>
+    <div class="modal-name">${esc(f.name) || 'Lebensmittel'}</div>
+    <div class="feld"><label>Name</label><input type="text" id="ffName" value="${esc(f.name)}"></div>
+    <div class="feld"><label>Kategorie</label><div class="wahl" id="ffCat">
+      ${['gesund', 'mittel', 'ungesund'].map(c => `<button type="button" data-v="${c}" class="w-${c} ${f.cat === c ? 'an' : ''}">${c === 'mittel' ? 'neutral/mittel' : c}</button>`).join('')}</div></div>
+    <div class="feld"><label><input type="checkbox" id="ffVegan" ${f.vegan ? 'checked' : ''}> vegan</label></div>
+    <div class="feld"><label>Einheit</label><input type="text" id="ffEinheit" list="einheitListe" value="${esc(f.einheit || 'Portion')}"></div>
+    <div class="feld"><label>Portionsgrösse – wie stark zählt 1 Einheit?</label><div class="wahl" id="ffGr">
+      ${GROESSEN.map(g => `<button type="button" data-v="${g.w}" class="${(f.gewicht || 1) === g.w ? 'an' : ''}">${BRUCH(g.w)}<br><span style="font-weight:600;font-size:11px">${g.name}</span></button>`).join('')}</div>
+      <div class="gr-hilfe" id="ffHilfe"></div></div>
+    <div class="form-knoepfe"><button class="klein" onclick="schliesseForm()">Abbrechen</button><button class="btn" id="ffOk">${istNeu ? 'Anlegen' : 'Speichern'}</button></div>`;
+  const wahl = id => box.querySelectorAll(`#${id} button`).forEach(b => b.onclick = () => {
+    box.querySelectorAll(`#${id} button`).forEach(x => x.classList.toggle('an', x === b)); hilfe(); });
+  const hilfe = () => { const g = GROESSEN.find(x => String(x.w) === (box.querySelector('#ffGr .an') || {}).dataset?.v);
+    box.querySelector('#ffHilfe').textContent = g ? `${g.name}: z. B. ${g.bsp}` : ''; };
+  wahl('ffCat'); wahl('ffGr'); hilfe();
+  box.querySelector('#ffOk').onclick = () => {
+    const name = box.querySelector('#ffName').value.trim();
+    if (!name) return alert('Bitte einen Namen eingeben.');
+    const doppelt = findeName(daten.foods, name);
+    if (doppelt && doppelt.id !== f.id) return alert(`«${name}» gibt es schon.`);
+    const cat = (box.querySelector('#ffCat .an') || {}).dataset?.v || 'mittel';
+    const gewicht = Number((box.querySelector('#ffGr .an') || {}).dataset?.v || 1);
+    schliesseForm();
+    beiSpeichern({ id: f.id || neueId(), name, cat, vegan: box.querySelector('#ffVegan').checked,
+      einheit: box.querySelector('#ffEinheit').value.trim() || 'Portion', gewicht });
+  };
+  document.getElementById('formModal').classList.remove('versteckt');
+  setTimeout(() => box.querySelector(istNeu ? '#ffEinheit' : '#ffName').focus(), 50);
+}
+/* Formular-Dialog: Aktivität anlegen/bearbeiten */
+function oeffneAktForm(a, beiSpeichern, istNeu) {
+  const box = document.getElementById('formInhalt');
+  box.innerHTML = `
+    <div class="modal-klein">${istNeu ? 'Neue Aktivität' : 'Aktivität bearbeiten'}</div>
+    <div class="modal-name">${esc(a.name) || 'Aktivität'}</div>
+    <div class="feld"><label>Name</label><input type="text" id="faName" value="${esc(a.name)}"></div>
+    <div class="feld"><label>Intensität</label><div class="wahl" id="faInt">
+      ${['leicht', 'mittel', 'intensiv'].map(i => `<button type="button" data-v="${i}" class="w-${INT_KLASSE[i]} ${a.intensity === i ? 'an' : ''}">${i}</button>`).join('')}</div>
+      <div class="gr-hilfe">leicht: Sprechen problemlos · mittel: leicht ausser Atem · intensiv: deutlich ausser Atem</div></div>
+    <div class="form-knoepfe"><button class="klein" onclick="schliesseForm()">Abbrechen</button><button class="btn" id="faOk">${istNeu ? 'Anlegen' : 'Speichern'}</button></div>`;
+  box.querySelectorAll('#faInt button').forEach(b => b.onclick = () => box.querySelectorAll('#faInt button').forEach(x => x.classList.toggle('an', x === b)));
+  box.querySelector('#faOk').onclick = () => {
+    const name = box.querySelector('#faName').value.trim();
+    if (!name) return alert('Bitte einen Namen eingeben.');
+    const doppelt = findeName(daten.activities, name);
+    if (doppelt && doppelt.id !== a.id) return alert(`«${name}» gibt es schon.`);
+    schliesseForm();
+    beiSpeichern({ id: a.id || neueId(), name, intensity: (box.querySelector('#faInt .an') || {}).dataset?.v || 'mittel' });
+  };
+  document.getElementById('formModal').classList.remove('versteckt');
+}
+function schliesseForm() { document.getElementById('formModal').classList.add('versteckt'); }
 
 function zeichneZiele() {
   const nm = { gesund: '% gesund', mittel: '% neutral/mittel', ungesund: '% ungesund', vegan: '% vegan', bewegung: 'Min. Bewegung', schritte: 'Schritte/Tag (Ø)' };
@@ -782,7 +929,7 @@ function zeichneAuswertung() {
     <div><span class="punkt mittel"></span> neutral/mittel: <strong>${st.pMittel} %</strong></div>
     <div><span class="punkt ungesund"></span> ungesund: <strong>${st.pUngesund} %</strong></div>
     <div><span class="punkt" style="background:var(--vegan)"></span> davon vegan: <strong>${st.pVegan} %</strong></div>
-    <div class="muted">${st.total} Portionen im Zeitraum</div>` : '<span class="muted">Keine Einträge in diesem Zeitraum.</span>';
+    <div class="muted">${zahl(st.total)} Portionen im Zeitraum (nach Grösse gewichtet)</div>` : '<span class="muted">Keine Einträge in diesem Zeitraum.</span>';
 }
 
 /* Bewegung anzeigen */
@@ -802,8 +949,13 @@ function zeichneBewegung() {
     .map(a => `<option value="${esc(a.name)}">${a.intensity}</option>`).join('');
   document.getElementById('bewListe').innerHTML = daten.moves.filter(m => m.date === gewaehlt).map(m => {
     const a = akt(m.actId) || { name: '(gelöscht)', intensity: 'mittel' };
-    return `<li><span class="punkt ${INT_KLASSE[a.intensity]}"></span><span class="grow">${esc(a.name)} · ${m.minutes} Min.</span>
-      <button class="klein" onclick="loescheBew(${m.id})">✕</button></li>`;
+    return `<li class="eintrag" id="m${m.id}"><span class="punkt ${INT_KLASSE[a.intensity]}"></span>
+      <span class="grow">${esc(a.name)} <span class="sub">· ${a.intensity}</span></span>
+      <span class="menge"><button onclick="aendereMin(${m.id}, -5)" title="5 Min. weniger">−</button>
+        <input type="number" min="0" step="5" value="${m.minutes}" onchange="setzeMin(${m.id}, this.value)" aria-label="Minuten">
+        <span class="einh">Min.</span>
+        <button onclick="aendereMin(${m.id}, 5)" title="5 Min. mehr">+</button></span>
+      <button class="klein" onclick="loescheBew(${m.id})" title="Löschen">✕</button></li>`;
   }).join('') || '<li class="muted">Noch keine Bewegung eingetragen.</li>';
 
   const s = wochenStart(ausIso(gewaehlt)), tage = [];
@@ -832,11 +984,7 @@ function zeichneAktKacheln() {
 }
 function bearbeiteAkt(id) {
   const a = akt(id); if (!a) return;
-  const name = prompt('Name:', a.name); if (name === null) return;
-  const k = prompt('Intensität: l = leicht, m = mittel, i = intensiv', a.intensity[0]); if (k === null) return;
-  a.name = name.trim() || a.name;
-  a.intensity = { l: 'leicht', m: 'mittel', i: 'intensiv' }[k.trim().toLowerCase()[0]] || a.intensity;
-  speichern(); alles();
+  oeffneAktForm(a, neu => { Object.assign(a, neu, { id: a.id }); speichern(); alles(); }, false);
 }
 function zeichneVorschlaege() {
   const ziel = daten.goals.find(z => z.metric === 'bewegung' && z.period === 'woche' && z.cmp === 'min');
@@ -860,7 +1008,7 @@ function zeichneVorschlaege() {
   }).join('');
 }
 function vorschlagEintragen(actId, minutes) {
-  daten.moves.push({ id: neueId(), date: gewaehlt, actId, minutes }); speichern(); alles();
+  bewegungHinzu(gewaehlt, actId, minutes); speichern(); alles();
 }
 
 /* ================================================================
@@ -902,8 +1050,9 @@ function topFoods(von, bis, filter, n = 3) {
     sum[f.id] = (sum[f.id] || 0) + e.portions;
     (tage[f.id] = tage[f.id] || new Set()).add(e.date);
   });
-  return Object.entries(sum).sort((a, b) => b[1] - a[1]).slice(0, n)
-    .map(([id, p]) => ({ f: food(Number(id)), p, tage: [...tage[id]].sort() }));
+  // sortiert nach gewichteter Menge (Menge × Portionsgrösse)
+  return Object.entries(sum).map(([id, p]) => { const f = food(Number(id)); return { f, p, w: p * (f.gewicht || 1), tage: [...tage[id]].sort() }; })
+    .sort((a, b) => b.w - a.w).slice(0, n);
 }
 /* Lieblings-Lebensmittel der letzten 30 Tage (für "mehr davon"-Tipps) */
 function favoriten(filter, n = 3) {
@@ -915,22 +1064,22 @@ function plusKnopf(f) {
   return `<button class="klein" onclick="schnellEintrag(${f.id})">+ ${esc(f.name)}</button>`;
 }
 function schnellEintrag(foodId) {
-  daten.entries.push({ id: neueId(), date: gewaehlt, foodId, portions: 1 }); speichern(); alles();
+  essenHinzu(gewaehlt, foodId, 1); speichern(); alles();
 }
 
 /* Tausch-Liste mit Wirkung: nach jedem Tausch wird der neue Anteil berechnet */
 function tauschMitWirkung(top, st, metric, cmp, X) {
   let g = st.gesund, u = st.ungesund, m = st.mittel, v = st.vegan, erreicht = false;
   const t = st.total;
-  return '<ul>' + top.map(({ f, p, tage }) => {
-    if (metric === 'vegan') { if (!f.vegan) v += p; }
-    else { if (f.cat === 'ungesund') u -= p; if (f.cat === 'mittel') m -= p; g += p; }
+  return '<ul>' + top.map(({ f, p, w, tage }) => {
+    if (metric === 'vegan') { if (!f.vegan) v += w; }
+    else { if (f.cat === 'ungesund') u -= w; if (f.cat === 'mittel') m -= w; g += w; }
     const neu = Math.round(({ gesund: g, ungesund: u, mittel: m, vegan: v }[metric]) / t * 100);
     const ok = cmp === 'min' ? neu >= X * 100 : neu <= X * 100;
     const wirkung = erreicht ? '' : ` → <strong>${neu} %</strong> ${metric}${ok ? ' ✓ Ziel erreicht' : ''}`;
     if (ok) erreicht = true;
     const k = f.name.toLowerCase(), alt = (metric === 'vegan' ? TAUSCH_VEGAN[k] : null) || TAUSCH[k] || 'eine Frucht oder Gemüse';
-    return `<li><strong>${esc(f.name)}</strong> ${p}× (${tage.map(WT).join(', ')}) – besser: ${alt}${wirkung}</li>`;
+    return `<li><strong>${esc(f.name)}</strong> ${esc(einheitText(p, f.einheit))} (${tage.map(WT).join(', ')}) – besser: ${alt}${wirkung}</li>`;
   }).join('') + '</ul>';
 }
 
@@ -1165,6 +1314,12 @@ function zeichneRinge() {
 
 /* ===== Version und Release Notes (neueste zuerst) ===== */
 const VERSIONEN = [
+  { nr: '1.8', datum: '2026-11-27', titel: 'Mengen & Portionsgrössen', punkte: [
+    'Mengen nachträglich ändern: − / + oder Zahl antippen, bei Essen und Bewegung',
+    'Gleiches Lebensmittel oder gleiche Aktivität am selben Tag wird zusammengezählt',
+    'Portionsgrössen: jede Einheit zählt passend (z. B. 1 Scheibe Käse = ½, 1 Portion Pommes = 1½)',
+    'Vorschläge für alle 100 Lebensmittel; Auswertung rechnet nach Grösse gewichtet',
+    'Neue Formulare zum Anlegen und Bearbeiten von Lebensmitteln und Aktivitäten'] },
   { nr: '1.7', datum: '2026-11-24', titel: 'Alles an einem Ort', punkte: [
     'Tagebuch: alle Eingaben zusammen – Essen, Bewegung und Schritte (inkl. CSV-Import)',
     'Auswertung: neu mit «Bewegung diese Woche» und «Vorschläge für dich»',
@@ -1273,7 +1428,13 @@ function zeigeAbzeichen(a) {
   feiern('');
 }
 
-function alles() { zeigeVersion(); zeigeSicherung(); zeigeGruss(); zeichneRinge(); pruefeAbzeichen(); pruefeZiele(); zeichneKalender(); zeichneTag(); zeichneWoche(); zeichneFoods(); zeichneBewegung(); zeichneVorschlaege(); zeichneZiele(); zeichneAuswertung(); zeichneBewAuswertung(); zeichneTipps(); }
+let zeichnetGerade = false;
+function alles() {
+  if (zeichnetGerade) return;                // kein verschachteltes Neuzeichnen
+  zeichnetGerade = true;
+  try { zeigeVersion(); zeigeSicherung(); zeigeGruss(); zeichneRinge(); pruefeAbzeichen(); pruefeZiele(); zeichneKalender(); zeichneTag(); zeichneWoche(); zeichneFoods(); zeichneBewegung(); zeichneVorschlaege(); zeichneZiele(); zeichneAuswertung(); zeichneBewAuswertung(); zeichneTipps(); }
+  finally { zeichnetGerade = false; }
+}
 
 /* ================================================================
    E) AKTIONEN (Knöpfe)
@@ -1281,8 +1442,10 @@ function alles() { zeigeVersion(); zeigeSicherung(); zeigeGruss(); zeichneRinge(
 document.getElementById('foodAdd').onclick = () => {
   const name = document.getElementById('foodName').value.trim();
   if (!name) return alert('Bitte einen Namen eingeben.');
-  daten.foods.push({ id: neueId(), name, cat: document.getElementById('foodCat').value, vegan: document.getElementById('foodVegan').checked });
-  document.getElementById('foodName').value = ''; document.getElementById('foodVegan').checked = false;
+  if (findeName(daten.foods, name)) return alert(`«${name}» gibt es schon.`);
+  daten.foods.push({ id: neueId(), name, cat: document.getElementById('foodCat').value, vegan: document.getElementById('foodVegan').checked,
+    einheit: document.getElementById('foodEinheit').value.trim() || 'Portion', gewicht: Number(document.getElementById('foodGr').value) || 1 });
+  document.getElementById('foodName').value = ''; document.getElementById('foodVegan').checked = false; document.getElementById('foodEinheit').value = '';
   speichern(); alles();
 };
 function loescheFood(id) {
@@ -1295,20 +1458,58 @@ const findeName = (liste, name) => liste.find(x => x.name.toLowerCase() === name
 document.getElementById('eintragAdd').onclick = () => {
   const feld = document.getElementById('eintragFood'), name = feld.value.trim();
   if (!name) return alert('Bitte ein Lebensmittel eingeben oder auswählen.');
-  let f = findeName(daten.foods, name);
-  if (!f) {   // unbekannt → direkt neu anlegen
-    const k = prompt(`«${name}» ist neu. Kategorie? g = gesund, m = neutral/mittel, u = ungesund`, 'm');
-    if (k === null) return;
-    const cat = { g: 'gesund', m: 'mittel', u: 'ungesund' }[k.trim().toLowerCase()[0]] || 'mittel';
-    f = { id: neueId(), name, cat, vegan: confirm(`Ist «${name}» vegan?`) };
-    daten.foods.push(f);
-  }
-  const portions = Math.max(1, Number(document.getElementById('eintragPortion').value) || 1);
-  daten.entries.push({ id: neueId(), date: gewaehlt, foodId: f.id, portions });
-  feld.value = ''; document.getElementById('eintragPortion').value = 1; speichern(); alles(); feld.focus();
+  const menge = Math.max(0.5, Math.round((Number(String(document.getElementById('eintragPortion').value).replace(',', '.')) || 1) * 2) / 2);
+  const fertig = f => {
+    const id = essenHinzu(gewaehlt, f.id, menge);
+    feld.value = ''; document.getElementById('eintragPortion').value = 1; zeigeEinheit();
+    speichern(); alles(); blinken('e' + id); feld.focus();
+  };
+  const f = findeName(daten.foods, name);
+  if (f) return fertig(f);
+  // unbekannt → Formular zum Anlegen öffnen, danach direkt eintragen
+  oeffneFoodForm({ name, cat: 'mittel', vegan: false, einheit: 'Portion', gewicht: 1 }, neu => { daten.foods.push(neu); fertig(neu); }, true);
 };
+function zeigeEinheit() {
+  const f = findeName(daten.foods, document.getElementById('eintragFood').value || '');
+  const n = Number(document.getElementById('eintragPortion').value) || 1;
+  document.getElementById('eintragEinheit').textContent = f
+    ? `${n === 1 ? f.einheit : (MEHRZAHL[f.einheit] || f.einheit)} (= ${zahl(n * f.gewicht)} Port.)` : 'Portion';
+}
+document.getElementById('eintragFood').addEventListener('input', zeigeEinheit);
+document.getElementById('eintragPortion').addEventListener('input', zeigeEinheit);
 document.getElementById('eintragFood').onkeydown = e => { if (e.key === 'Enter') document.getElementById('eintragAdd').click(); };
 function loescheEintrag(id) { daten.entries = daten.entries.filter(e => e.id !== id); speichern(); alles(); }
+/* Mengen nachträglich korrigieren (0 = Eintrag entfernen) */
+function setzeMenge(id, wert) {
+  const e = daten.entries.find(x => x.id === id); if (!e) return;
+  const n = Math.round(Math.max(0, Number(String(wert).replace(',', '.')) || 0) * 2) / 2;   // in halben Schritten
+  if (n === e.portions) return;                       // nichts geändert (z. B. zweites change-Ereignis)
+  if (n === 0) return setTimeout(() => loescheEintrag(id), 0);
+  e.portions = n; speichern();
+  setTimeout(() => { alles(); blinken('e' + id); }, 0);   // erst neu zeichnen, wenn das Eingabefeld fertig ist
+}
+function aendereMenge(id, delta) { const e = daten.entries.find(x => x.id === id); if (e) setzeMenge(id, e.portions + delta); }
+function setzeMin(id, wert) {
+  const m = daten.moves.find(x => x.id === id); if (!m) return;
+  const n = Math.max(0, Math.round(Number(wert) || 0));
+  if (n === m.minutes) return;
+  if (n === 0) return setTimeout(() => loescheBew(id), 0);
+  m.minutes = n; speichern();
+  setTimeout(() => { alles(); blinken('m' + id); }, 0);
+}
+function aendereMin(id, delta) { const m = daten.moves.find(x => x.id === id); if (m) setzeMin(id, m.minutes + delta); }
+function blinken(elId) { const el = document.getElementById(elId); if (el) { el.classList.remove('blink'); void el.offsetWidth; el.classList.add('blink'); } }
+/* Gleiches Lebensmittel / gleiche Aktivität am selben Tag → Menge zusammenzählen statt neue Zeile */
+function essenHinzu(datum, foodId, menge) {
+  const e = daten.entries.find(x => x.date === datum && x.foodId === foodId);
+  if (e) e.portions = Math.round((e.portions + menge) * 2) / 2; else daten.entries.push({ id: neueId(), date: datum, foodId, portions: menge });
+  return e ? e.id : daten.entries[daten.entries.length - 1].id;
+}
+function bewegungHinzu(datum, actId, minutes) {
+  const m = daten.moves.find(x => x.date === datum && x.actId === actId);
+  if (m) m.minutes += minutes; else daten.moves.push({ id: neueId(), date: datum, actId, minutes });
+  return m ? m.id : daten.moves[daten.moves.length - 1].id;
+}
 document.getElementById('zielAdd').onclick = () => {
   const value = Number(document.getElementById('zielWert').value);
   const istBew = ['bewegung', 'schritte'].includes(document.getElementById('zielMetrik').value);
@@ -1328,21 +1529,17 @@ document.getElementById('bewAdd').onclick = () => {
   const minutes = Math.round(Number(document.getElementById('bewMin').value));
   if (!name) return alert('Bitte eine Aktivität eingeben oder auswählen.');
   if (!(minutes > 0)) return alert('Bitte Minuten eingeben.');
-  let a = findeName(daten.activities, name);
-  if (!a) {   // unbekannt → direkt neu anlegen
-    const k = prompt(`«${name}» ist neu. Intensität? l = leicht, m = mittel, i = intensiv`, 'm');
-    if (k === null) return;
-    a = { id: neueId(), name, intensity: { l: 'leicht', m: 'mittel', i: 'intensiv' }[k.trim().toLowerCase()[0]] || 'mittel' };
-    daten.activities.push(a);
-  }
-  daten.moves.push({ id: neueId(), date: gewaehlt, actId: a.id, minutes });
-  feld.value = ''; speichern(); alles(); feld.focus();
+  const fertig = a => { const id = bewegungHinzu(gewaehlt, a.id, minutes); feld.value = ''; speichern(); alles(); blinken('m' + id); feld.focus(); };
+  const a = findeName(daten.activities, name);
+  if (a) return fertig(a);
+  oeffneAktForm({ name, intensity: 'mittel' }, neu => { daten.activities.push(neu); fertig(neu); }, true);
 };
 document.getElementById('bewAkt').onkeydown = e => { if (e.key === 'Enter') document.getElementById('bewAdd').click(); };
 function loescheBew(id) { daten.moves = daten.moves.filter(m => m.id !== id); speichern(); alles(); }
 document.getElementById('aktAdd').onclick = () => {
   const name = document.getElementById('aktName').value.trim();
   if (!name) return alert('Bitte einen Namen eingeben.');
+  if (findeName(daten.activities, name)) return alert(`«${name}» gibt es schon.`);
   daten.activities.push({ id: neueId(), name, intensity: document.getElementById('aktInt').value });
   document.getElementById('aktName').value = ''; speichern(); alles();
 };
@@ -1483,8 +1680,11 @@ document.getElementById('importFile').onchange = ev => {
 
 document.getElementById('modal').onclick = e => { if (e.target.id === 'modal') schliesseModal(); };
 document.getElementById('versionBtn').onclick = oeffneNotes;
+document.getElementById('formModal').onclick = e => { if (e.target.id === 'formModal') schliesseForm(); };
+document.getElementById('einheitListe').innerHTML = EINHEITEN.map(e => `<option value="${e}">`).join('');
+document.getElementById('foodGr').innerHTML = GROESSEN.map(g => `<option value="${g.w}" ${g.w === 1 ? 'selected' : ''}>Grösse ${BRUCH(g.w)} (${g.name})</option>`).join('');
 document.getElementById('notesModal').onclick = e => { if (e.target.id === 'notesModal') schliesseNotes(); };
-document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!document.getElementById('modal').classList.contains('versteckt')) schliesseModal(); else schliesseNotes(); });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!document.getElementById('modal').classList.contains('versteckt')) schliesseModal(); else { schliesseNotes(); schliesseForm(); } });
 
 /* Neuer Tag, während die App offen war (z. B. über Nacht im Hintergrund) → auf heute springen */
 let heuteBeimStart = iso(new Date());
